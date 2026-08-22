@@ -3,11 +3,12 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 IMAGE_NAME="${IMAGE_NAME:-invoice-renderer-test}"
+OUTPUT_DIR="${RENDERER_TEST_OUTPUT_DIR:-$ROOT_DIR/generated/renderer-runtime-test}"
 
 cd "$ROOT_DIR"
 
-rm -rf "$ROOT_DIR/generated"
-mkdir -p "$ROOT_DIR/generated"
+rm -rf "$OUTPUT_DIR"
+mkdir -p "$OUTPUT_DIR"
 
 docker build --target test -t "$IMAGE_NAME" services/invoice-renderer
 docker run --rm "$IMAGE_NAME"
@@ -15,13 +16,13 @@ docker run --rm "$IMAGE_NAME"
 docker build -t invoice-renderer-runtime services/invoice-renderer
 CLI_OUTPUT="$(docker run --rm \
   -v "$ROOT_DIR/tests/fixtures:/fixtures:ro" \
-  -v "$ROOT_DIR/generated:/data/invoices" \
+  -v "$OUTPUT_DIR:/data/invoices" \
   invoice-renderer-runtime \
   python -m app.cli /fixtures/pt-nusa-render-request.json)"
 
 echo "$CLI_OUTPUT"
 
-PDF_PATH="$(find "$ROOT_DIR/generated" -type f -name '*.pdf' | head -n 1)"
+PDF_PATH="$(find "$OUTPUT_DIR" -type f -name '*.pdf' | head -n 1)"
 if [[ -z "$PDF_PATH" ]]; then
   echo "PDF_GENERATED=NO"
   exit 1

@@ -74,6 +74,8 @@ This builds the renderer test target, runs renderer unit tests inside the
 container, renders the PT Nusa fixture through the runtime image, and verifies
 the generated PDF filename, non-trivial size, `%PDF` signature, SHA-256, and
 reported renderer metadata.
+The default output directory is `generated/renderer-runtime-test`; override it
+with `RENDERER_TEST_OUTPUT_DIR` when needed.
 
 GitHub Actions CI runs:
 
