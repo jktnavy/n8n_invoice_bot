@@ -3,7 +3,7 @@ services:
     image: mysql:8.4
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE:-invoice_bot_v2}
-      MYSQL_USER: ${MYSQL_USER:-invoicebot}
+      MYSQL_USER: ${MYSQL_USER:-invoice_bot_v2}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     ports:

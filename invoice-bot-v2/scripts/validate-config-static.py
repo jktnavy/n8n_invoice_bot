@@ -60,6 +60,8 @@ def main() -> int:
 
     compose = (ROOT_DIR / "docker-compose.yml").read_text()
     expected_compose_bits = [
+        "MYSQL_DATABASE: ${MYSQL_DATABASE:-invoice_bot_v2}",
+        "MYSQL_USER: ${MYSQL_USER:-invoice_bot_v2}",
         "${MYSQL_PORT_PUBLISHED:-3307}:3306",
         "${INVOICE_RENDERER_PORT:-8000}:8000",
         "${N8N_PORT:-5678}:5678",
@@ -91,4 +93,3 @@ def parse_env_example(path: Path) -> dict[str, str]:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
