@@ -10,6 +10,7 @@ QUERY_TEMPLATES = "\n".join(path.read_text() for path in sorted(QUERY_DIR.glob("
 APPROVE_DRAFT_SQL = (QUERY_DIR / "approve-draft.sql").read_text()
 CREATE_DRAFT_SQL = (QUERY_DIR / "create-draft.sql").read_text()
 GET_STATUS_SQL = (QUERY_DIR / "get-invoice-status.sql").read_text()
+VOID_INVOICE_SQL = (QUERY_DIR / "void-invoice.sql").read_text()
 PATCH_SCHEMA = (ROOT_DIR / "llm" / "schemas" / "invoice-patch.schema.json").read_text()
 
 REQUIRED_TABLES = {
@@ -93,6 +94,22 @@ def main() -> int:
     ]:
         if required_fragment not in APPROVE_DRAFT_SQL:
             raise SystemExit(f"approve-draft missing invoice number allocation fragment: {required_fragment}")
+
+    for required_fragment in [
+        "FOR UPDATE",
+        "UPDATE invoices",
+        "status = 'VOID'",
+        "i.status <> 'VOID'",
+        "c.last_invoice_id = i.id",
+        ":invoice_id",
+        ":invoice_number",
+        ":telegram_chat_id",
+    ]:
+        if required_fragment not in VOID_INVOICE_SQL:
+            raise SystemExit(f"void-invoice query missing fragment: {required_fragment}")
+
+    if re.search(r"\bDELETE\b", VOID_INVOICE_SQL, re.IGNORECASE):
+        raise SystemExit("void-invoice must not delete invoice records")
 
     print("SCHEMA_STATIC_VALIDATION=PASS")
     return 0

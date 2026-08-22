@@ -47,6 +47,11 @@ into approval.
 invoice records. Delivery retry/resend creates a new delivery attempt, not a new
 invoice.
 
+Final invoice cancellation uses `database/queries/void-invoice.sql` and updates
+`invoices.status` to `VOID` without deleting invoices, items, PDFs, deliveries,
+or audit records. Voided invoices are ignored by duplicate and status lookup
+queries.
+
 Do not use `SELECT MAX(invoice_number) + 1`.
 
 Runtime DB user should be scoped to `invoice_bot_v2`; see `database/create-runtime-user.example.sql`.

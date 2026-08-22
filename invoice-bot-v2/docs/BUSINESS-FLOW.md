@@ -42,6 +42,14 @@ Cancellation is allowed before approval only. It marks the active draft
 `CANCELLED`, clears `telegram_conversations.active_draft_id`, returns the
 conversation to `IDLE`, and must not allocate an invoice number.
 
+## Void Final Invoice
+
+Final invoice cancellation is non-destructive. It marks the invoice `VOID`
+inside a transaction, keeps invoice items, PDF path, delivery history, and audit
+history intact, and must not allocate a new invoice number. Voided invoices are
+excluded from status, resend, and duplicate checks so the user can create a new
+corrected invoice with a new sequence number.
+
 ## Payment
 
 `DOWN_PAYMENT` stores the accepted DP amount and recalculates `balance_due`
@@ -71,4 +79,5 @@ flows must record at least `DRAFT_CREATED`, `PREVIEW_SENT`,
 `APPROVAL_RECEIVED`, `INVOICE_CREATED`, `PDF_GENERATED`, `DELIVERY_STARTED`,
 and `DELIVERY_SENT`. Failures use `ERROR` or the specific failure event, such as
 `DELIVERY_FAILED`. Draft cancellation records `DRAFT_CANCELLED`. Resend success
-records `INVOICE_RESENT`. Detail views record `INVOICE_DETAIL_VIEWED`.
+records `INVOICE_RESENT`. Detail views record `INVOICE_DETAIL_VIEWED`. Final
+invoice voids record `INVOICE_VOIDED`.

@@ -44,6 +44,8 @@ class InvoiceBotSimulator:
             return self._approve(chat_id, user_id, message, conversation, delivery_ok, correlation_id)
         if intent == "CANCEL_DRAFT":
             return self._cancel_draft(chat_id, user_id, conversation, correlation_id)
+        if intent == "CANCEL_INVOICE":
+            return self._cancel_invoice(chat_id, user_id, message, conversation, correlation_id)
         if intent == "RESEND_INVOICE":
             return self._resend(chat_id, user_id, conversation, delivery_ok, correlation_id)
         if intent == "GET_INVOICE":
@@ -176,6 +178,9 @@ class InvoiceBotSimulator:
             self._audit(correlation_id, "ERROR", "invoice", None, chat_id, user_id, message="No invoice available to resend")
             return {"type": "NO_INVOICE"}
         invoice = self.store.invoices[invoice_id]
+        if invoice["status"] == "VOID":
+            self._audit(correlation_id, "ERROR", "invoice", invoice["id"], chat_id, user_id, message="Void invoice cannot be resent")
+            return {"type": "NO_INVOICE"}
         delivery = self._send_invoice(invoice, chat_id, delivery_ok, correlation_id, user_id)
         invoice["status"] = "SENT" if delivery["status"] == "sent" else "DELIVERY_FAILED"
         if delivery["status"] == "sent":
@@ -188,8 +193,23 @@ class InvoiceBotSimulator:
             "delivery_status": delivery["status"],
         }
 
+    def _cancel_invoice(self, chat_id: str, user_id: str | None, message: str, conversation: dict, correlation_id: str) -> dict:
+        invoice = self._find_invoice_for_message(message, conversation, include_void=True)
+        if not invoice:
+            self._audit(correlation_id, "ERROR", "invoice", None, chat_id, user_id, message="Invoice to void not found")
+            return {"type": "NO_INVOICE"}
+        if invoice["status"] == "VOID":
+            self._audit(correlation_id, "ERROR", "invoice", invoice["id"], chat_id, user_id, message="Invoice already void")
+            return {"type": "INVOICE_ALREADY_VOID", "invoice_id": invoice["id"], "invoice_number": invoice["invoice_number"]}
+
+        invoice["status"] = "VOID"
+        if conversation.get("last_invoice_id") == invoice["id"]:
+            conversation["conversation_state"] = "IDLE"
+        self._audit(correlation_id, "INVOICE_VOIDED", "invoice", invoice["id"], chat_id, user_id, metadata={"invoice_number": invoice["invoice_number"]})
+        return {"type": "INVOICE_VOIDED", "invoice_id": invoice["id"], "invoice_number": invoice["invoice_number"]}
+
     def _status(self, chat_id: str, user_id: str | None, message: str, conversation: dict, correlation_id: str) -> dict:
-        invoice = self._find_invoice_for_status(message, conversation)
+        invoice = self._find_invoice_for_message(message, conversation)
         if not invoice:
             self._audit(correlation_id, "ERROR", "invoice", None, chat_id, user_id, message="Invoice status not found")
             return {"type": "NO_INVOICE"}
@@ -208,7 +228,7 @@ class InvoiceBotSimulator:
         }
 
     def _invoice_detail(self, chat_id: str, user_id: str | None, message: str, conversation: dict, correlation_id: str) -> dict:
-        invoice = self._find_invoice_for_status(message, conversation)
+        invoice = self._find_invoice_for_message(message, conversation)
         if not invoice:
             self._audit(correlation_id, "ERROR", "invoice", None, chat_id, user_id, message="Invoice detail not found")
             return {"type": "NO_INVOICE"}
@@ -377,15 +397,15 @@ class InvoiceBotSimulator:
                 return draft
         return None
 
-    def _find_invoice_for_status(self, message: str, conversation: dict) -> dict | None:
+    def _find_invoice_for_message(self, message: str, conversation: dict, include_void: bool = False) -> dict | None:
         text = message.upper()
         for invoice in self.store.invoices.values():
-            if invoice["invoice_number"].upper() in text and invoice["status"] != "VOID":
+            if invoice["invoice_number"].upper() in text and (include_void or invoice["status"] != "VOID"):
                 return invoice
         invoice_id = conversation.get("last_invoice_id")
         if invoice_id:
             invoice = self.store.invoices.get(invoice_id)
-            if invoice and invoice["status"] != "VOID":
+            if invoice and (include_void or invoice["status"] != "VOID"):
                 return invoice
         return None
 

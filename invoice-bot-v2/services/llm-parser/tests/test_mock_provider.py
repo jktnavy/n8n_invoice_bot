@@ -23,6 +23,10 @@ class MockProviderTest(unittest.TestCase):
         result = self.provider.classify_intent("batalkan invoice ini")
         self.assertEqual(result["intent"], "CANCEL_DRAFT")
 
+    def test_classifies_cancel_final_invoice(self):
+        result = self.provider.classify_intent("batalkan invoice INV-0001/STA/VIII/2026")
+        self.assertEqual(result["intent"], "CANCEL_INVOICE")
+
     def test_classifies_status_invoice_as_status(self):
         result = self.provider.classify_intent("status invoice")
         self.assertEqual(result["intent"], "GET_STATUS")

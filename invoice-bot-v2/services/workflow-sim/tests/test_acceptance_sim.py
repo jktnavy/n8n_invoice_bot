@@ -171,6 +171,41 @@ class AcceptanceSimulatorTest(unittest.TestCase):
         self.assertEqual(approved["type"], "NO_ACTIVE_DRAFT")
         self.assertEqual(len(bot.store.invoices), 0)
 
+    def test_cancel_final_invoice_voids_without_deleting_or_resending(self):
+        bot = InvoiceBotSimulator()
+        bot.handle_message("chat-1", "user-1", CREATE_MESSAGE)
+        approved = bot.handle_message("chat-1", "user-1", "setuju")
+
+        cancelled = bot.handle_message("chat-1", "user-1", f"batalkan invoice {approved['invoice_number']}")
+
+        self.assertEqual(cancelled["type"], "INVOICE_VOIDED")
+        self.assertEqual(cancelled["invoice_number"], "INV-0001/STA/VIII/2026")
+        self.assertEqual(bot.store.invoices[approved["invoice_id"]]["status"], "VOID")
+        self.assertEqual(len(bot.store.invoices), 1)
+        self.assertEqual(len(bot.store.deliveries), 1)
+        self.assertEqual(bot.store.sequence_last_number, 1)
+        self.assertAuditEventsInclude(bot, ["INVOICE_VOIDED"])
+
+        status = bot.handle_message("chat-1", "user-1", "status invoice")
+        self.assertEqual(status["type"], "NO_INVOICE")
+
+        resend = bot.handle_message("chat-1", "user-1", "kirim ulang invoice tadi")
+        self.assertEqual(resend["type"], "NO_INVOICE")
+        self.assertEqual(len(bot.store.deliveries), 1)
+
+    def test_voided_invoice_is_ignored_by_duplicate_check(self):
+        bot = InvoiceBotSimulator()
+        bot.handle_message("chat-1", "user-1", CREATE_MESSAGE)
+        first = bot.handle_message("chat-1", "user-1", "setuju")
+        bot.handle_message("chat-1", "user-1", f"batalkan invoice {first['invoice_number']}")
+
+        preview = bot.handle_message("chat-1", "user-1", CREATE_MESSAGE)
+        self.assertEqual(preview["type"], "PREVIEW")
+        second = bot.handle_message("chat-1", "user-1", "setuju")
+        self.assertEqual(second["invoice_number"], "INV-0002/STA/VIII/2026")
+        self.assertEqual(len(bot.store.invoices), 2)
+        self.assertEqual(bot.store.invoices[first["invoice_id"]]["status"], "VOID")
+
     def test_status_without_invoice_does_not_guess(self):
         bot = InvoiceBotSimulator()
         result = bot.handle_message("chat-1", "user-1", "status invoice")
