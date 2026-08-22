@@ -9,6 +9,17 @@ FORBIDDEN_SNIPPETS = [
     "return $input.all();",
 ]
 
+EXPECTED_IMPORT_ORDER = [
+    "08-error-handler.json",
+    "01-telegram-router.json",
+    "02-create-invoice-draft.json",
+    "03-update-invoice-draft.json",
+    "04-approve-invoice.json",
+    "05-send-invoice.json",
+    "06-resend-invoice.json",
+    "07-invoice-status.json",
+]
+
 WORKFLOW_CONTRACTS = {
     "01-telegram-router.json": {
         "name": "01-telegram-router",
@@ -178,13 +189,17 @@ def main() -> int:
     workflow_dir = ROOT_DIR / "n8n" / "workflows"
     failures = []
     paths = {path.name: path for path in workflow_dir.glob("*.json")}
+    failures.extend(validate_import_manifest(paths))
     for required_file in WORKFLOW_CONTRACTS:
         if required_file not in paths:
             failures.append(f"{required_file}: missing required workflow export")
+    for workflow_file in sorted(set(paths) - set(WORKFLOW_CONTRACTS)):
+        failures.append(f"{workflow_file}: unexpected workflow export")
     for path in sorted(paths.values()):
         workflow = json.loads(path.read_text())
         if not workflow.get("name"):
             failures.append(f"{path.name}: missing workflow name")
+        failures.extend(validate_export_hygiene(path.name, workflow))
         failures.extend(validate_graph_integrity(path.name, workflow))
         contract = WORKFLOW_CONTRACTS.get(path.name)
         if contract:
@@ -236,7 +251,103 @@ def validate_contract(file_name: str, workflow: dict, contract: dict) -> list[st
         if actual_code != expected_code:
             failures.append(f"{file_name}/{node_name}: jsCode is not synchronized with {snippet_file}")
 
+    if file_name == "01-telegram-router.json":
+        webhook = nodes.get("Telegram Webhook", {})
+        parameters = webhook.get("parameters", {})
+        expected_webhook = {
+            "httpMethod": "POST",
+            "path": "telegram/invoice-bot-v2",
+            "responseMode": "onReceived",
+        }
+        for key, expected_value in expected_webhook.items():
+            if parameters.get(key) != expected_value:
+                failures.append(
+                    f"{file_name}/Telegram Webhook: expected {key}={expected_value!r}"
+                )
+        if parameters.get("options", {}).get("responseCode") != 200:
+            failures.append(f"{file_name}/Telegram Webhook: expected responseCode=200")
+
     return failures
+
+
+def validate_import_manifest(paths: dict[str, Path]) -> list[str]:
+    failures = []
+    existing_exports = sorted(paths)
+    expected_exports = sorted(WORKFLOW_CONTRACTS)
+    if existing_exports != expected_exports:
+        failures.append(
+            "n8n/workflows: exports do not match workflow contracts "
+            f"expected={expected_exports!r} actual={existing_exports!r}"
+        )
+
+    import_script = ROOT_DIR / "scripts" / "import-n8n-workflows.sh"
+    imported = extract_import_manifest(import_script.read_text())
+    if imported != EXPECTED_IMPORT_ORDER:
+        failures.append(
+            f"import-n8n-workflows.sh: expected workflow import order {EXPECTED_IMPORT_ORDER!r}"
+        )
+    return failures
+
+
+def extract_import_manifest(script: str) -> list[str]:
+    in_array = False
+    workflows = []
+    for raw_line in script.splitlines():
+        line = raw_line.strip()
+        if line == "WORKFLOWS=(":
+            in_array = True
+            continue
+        if in_array and line == ")":
+            break
+        if in_array and line.startswith('"') and line.endswith('"'):
+            workflows.append(line.strip('"'))
+    return workflows
+
+
+def validate_export_hygiene(file_name: str, workflow: dict) -> list[str]:
+    failures = []
+    if workflow.get("active") is not False:
+        failures.append(f"{file_name}: workflow export must be inactive")
+    if workflow.get("pinData"):
+        failures.append(f"{file_name}: pinData must not be committed")
+
+    forbidden_paths = find_forbidden_key_paths(workflow, {"credentials", "credentialData"})
+    for path in forbidden_paths:
+        failures.append(f"{file_name}: committed credential metadata at {path}")
+
+    for node in workflow.get("nodes", []):
+        node_name = node.get("name") or "<unnamed>"
+        if not node.get("id"):
+            failures.append(f"{file_name}/{node_name}: missing stable node id")
+        if not node.get("typeVersion"):
+            failures.append(f"{file_name}/{node_name}: missing typeVersion")
+        position = node.get("position")
+        if (
+            not isinstance(position, list)
+            or len(position) != 2
+            or not all(isinstance(value, (int, float)) for value in position)
+        ):
+            failures.append(f"{file_name}/{node_name}: missing numeric two-point position")
+
+    node_ids = [node.get("id") for node in workflow.get("nodes", []) if node.get("id")]
+    for node_id in sorted({value for value in node_ids if node_ids.count(value) > 1}):
+        failures.append(f"{file_name}: duplicate node id {node_id!r}")
+
+    return failures
+
+
+def find_forbidden_key_paths(value, forbidden_keys: set[str], prefix: str = "$") -> list[str]:
+    paths = []
+    if isinstance(value, dict):
+        for key, child in value.items():
+            child_path = f"{prefix}.{key}"
+            if key in forbidden_keys:
+                paths.append(child_path)
+            paths.extend(find_forbidden_key_paths(child, forbidden_keys, child_path))
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            paths.extend(find_forbidden_key_paths(child, forbidden_keys, f"{prefix}[{index}]"))
+    return paths
 
 
 def validate_graph_integrity(file_name: str, workflow: dict) -> list[str]:

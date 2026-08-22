@@ -16,9 +16,10 @@ Validate exports:
 ```
 
 The validator checks source-level import readiness only: required workflow
-exports, workflow names, node types, required edges, synchronized Code-node
-snippets, and connection graph integrity. A live n8n import/execution test is
-still a separate runtime gate.
+exports, workflow names, inactive export state, node IDs/positions/type
+versions, node types, required edges, synchronized Code-node snippets,
+connection graph integrity, import helper drift, and committed credential/pin
+data hygiene. A live n8n import/execution test is still a separate runtime gate.
 
 Runtime import helper:
 
@@ -28,6 +29,10 @@ Runtime import helper:
 
 The helper runs validation before import and supports native n8n or Docker
 Compose mode.
+
+Workflow exports must stay inactive in Git. Activation happens explicitly inside
+the target n8n runtime after environment variables and credentials are
+configured.
 
 Planned workflows:
 
