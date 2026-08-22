@@ -36,6 +36,15 @@ cp docs/readiness-evidence.example.json readiness-evidence.json
 ./scripts/readiness-gate.py --evidence readiness-evidence.json
 ```
 
+Runtime evidence helper:
+
+```bash
+./scripts/record-readiness-evidence.py \
+  --gate llm_live_structured_output \
+  --command "PYTHONPATH=services/llm-parser python3 -m llm_parser.cli structured-smoke" \
+  --evidence "ok=true provider=openai intent=CREATE_INVOICE item_count=2"
+```
+
 The actual `readiness-evidence.json` file is ignored by Git because it is a
 local/live verification artifact.
 

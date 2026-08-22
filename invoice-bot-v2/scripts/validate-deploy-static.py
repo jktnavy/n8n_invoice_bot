@@ -92,6 +92,13 @@ def main() -> int:
             "Webhook URL must end with /webhook/telegram/invoice-bot-v2",
             "set-webhook --url",
         ],
+        "scripts/record-readiness-evidence.py": [
+            "choices=RUNTIME_GATES",
+            "assert_no_secret_like_value(args.command, \"command\")",
+            "assert_no_secret_like_value(args.evidence, \"evidence\")",
+            "READINESS_EVIDENCE_UPDATED",
+            "GATE_VERIFIED",
+        ],
     }
     for relative_path, fragments in script_expectations.items():
         content = (ROOT_DIR / relative_path).read_text()

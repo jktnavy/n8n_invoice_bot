@@ -33,6 +33,7 @@ python3 -m compileall -q \
   "$ROOT_DIR/services/invoice-core" \
   "$ROOT_DIR/services/llm-parser" \
   "$ROOT_DIR/services/invoice-renderer/app"
+python3 -m py_compile "$ROOT_DIR"/scripts/*.py
 
 for file in $(find "$ROOT_DIR" -name '*.json' -type f); do
   python3 -m json.tool "$file" >/dev/null

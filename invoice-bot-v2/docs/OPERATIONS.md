@@ -41,6 +41,15 @@ non-secret command results, then run:
 ./scripts/readiness-gate.py --evidence readiness-evidence.json
 ```
 
+Record one verified gate after a successful runtime check:
+
+```bash
+./scripts/record-readiness-evidence.py \
+  --gate renderer_pdf_runtime \
+  --command "./scripts/test-renderer-container.sh" \
+  --evidence "PDF_METADATA=PASS sha256=<non-secret-digest>"
+```
+
 `V2_READY=YES` is reported only when every runtime gate is marked verified with
 timestamp, command, and evidence text.
 
