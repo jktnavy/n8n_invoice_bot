@@ -22,6 +22,8 @@ SELECT
   d.sent_at,
   d.last_attempt_at
 FROM invoices i
+JOIN invoice_drafts sd
+  ON sd.id = i.source_draft_id
 LEFT JOIN telegram_conversations c
   ON c.last_invoice_id = i.id
 LEFT JOIN invoice_deliveries d
@@ -33,8 +35,18 @@ LEFT JOIN invoice_deliveries d
     LIMIT 1
   )
 WHERE (
-    (:invoice_id IS NOT NULL AND i.id = :invoice_id)
-    OR (:invoice_number IS NOT NULL AND i.invoice_number = :invoice_number)
+    (
+      :invoice_id IS NOT NULL
+      AND i.id = :invoice_id
+      AND sd.telegram_chat_id = :telegram_chat_id
+      AND sd.telegram_user_id <=> :telegram_user_id
+    )
+    OR (
+      :invoice_number IS NOT NULL
+      AND i.invoice_number = :invoice_number
+      AND sd.telegram_chat_id = :telegram_chat_id
+      AND sd.telegram_user_id <=> :telegram_user_id
+    )
     OR (
       :invoice_id IS NULL
       AND :invoice_number IS NULL

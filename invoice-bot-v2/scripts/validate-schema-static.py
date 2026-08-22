@@ -10,6 +10,7 @@ QUERY_DIR = ROOT_DIR / "database" / "queries"
 QUERY_TEMPLATES = "\n".join(path.read_text() for path in sorted(QUERY_DIR.glob("*.sql")))
 APPROVE_DRAFT_SQL = (QUERY_DIR / "approve-draft.sql").read_text()
 CREATE_DRAFT_SQL = (QUERY_DIR / "create-draft.sql").read_text()
+DUPLICATE_CHECK_SQL = (QUERY_DIR / "duplicate-check.sql").read_text()
 GET_STATUS_SQL = (QUERY_DIR / "get-invoice-status.sql").read_text()
 VOID_INVOICE_SQL = (QUERY_DIR / "void-invoice.sql").read_text()
 UPDATE_RENDER_RESULT_SQL = (QUERY_DIR / "update-render-result.sql").read_text()
@@ -96,16 +97,31 @@ def main() -> int:
 
     for status_fragment in [
         "c.last_invoice_id = i.id",
+        "JOIN invoice_drafts sd",
+        "sd.id = i.source_draft_id",
         "delivery_status",
         "provider_message_id",
         ":invoice_id",
         ":invoice_number",
         ":telegram_chat_id",
+        "sd.telegram_chat_id = :telegram_chat_id",
+        "sd.telegram_user_id <=> :telegram_user_id",
         "c.telegram_user_key = COALESCE(:telegram_user_id, '')",
         "i.status <> 'VOID'",
     ]:
         if status_fragment not in GET_STATUS_SQL:
             raise SystemExit(f"get-invoice-status query missing fragment: {status_fragment}")
+
+    for duplicate_fragment in [
+        "JOIN invoice_drafts sd",
+        "telegram_user_id <=> :telegram_user_id",
+        "sd.id = invoices.source_draft_id",
+        "sd.telegram_chat_id = :telegram_chat_id",
+        "sd.telegram_user_id <=> :telegram_user_id",
+        "invoices.status <> 'VOID'",
+    ]:
+        if duplicate_fragment not in DUPLICATE_CHECK_SQL:
+            raise SystemExit(f"duplicate-check query missing scoped lookup fragment: {duplicate_fragment}")
 
     if ":invoice_number" in APPROVE_DRAFT_SQL:
         raise SystemExit("approve-draft must not accept invoice_number as an input parameter")
