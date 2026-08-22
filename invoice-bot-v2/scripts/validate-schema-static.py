@@ -111,6 +111,8 @@ def main() -> int:
         "d.telegram_chat_id = :telegram_chat_id",
         "d.status = 'AWAITING_APPROVAL'",
         "@invoice_id > 0",
+        "SET @invoice_id = 0",
+        "SET @invoice_id = IF(ROW_COUNT() = 1, LAST_INSERT_ID(), 0)",
     ]:
         if required_fragment not in APPROVE_DRAFT_SQL:
             raise SystemExit(f"approve-draft missing invoice number allocation fragment: {required_fragment}")

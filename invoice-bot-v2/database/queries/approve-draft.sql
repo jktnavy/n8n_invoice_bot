@@ -37,6 +37,8 @@ FROM invoice_sequences
 WHERE company_code = :company_code
   AND sequence_year = :sequence_year;
 
+SET @invoice_id = 0;
+
 INSERT INTO customers (name, normalized_name)
 SELECT d.customer_name, LOWER(TRIM(d.customer_name))
 FROM invoice_drafts d
@@ -101,7 +103,7 @@ WHERE d.id = :draft_id
   AND d.telegram_chat_id = :telegram_chat_id
   AND d.status = 'AWAITING_APPROVAL';
 
-SET @invoice_id = LAST_INSERT_ID();
+SET @invoice_id = IF(ROW_COUNT() = 1, LAST_INSERT_ID(), 0);
 
 INSERT INTO invoice_items (
   invoice_id,
