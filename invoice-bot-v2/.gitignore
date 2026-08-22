@@ -12,6 +12,9 @@ __pycache__/
 data/
 generated/
 output/
+readiness-evidence.json
+readiness-evidence.*.json
+!docs/readiness-evidence.example.json
 node_modules/
 .DS_Store
 .vscode/

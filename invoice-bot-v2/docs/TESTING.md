@@ -29,6 +29,16 @@ Static config validation is included in `test-local` and can be run directly:
 ./scripts/readiness-gate.py
 ```
 
+Runtime evidence template:
+
+```bash
+cp docs/readiness-evidence.example.json readiness-evidence.json
+./scripts/readiness-gate.py --evidence readiness-evidence.json
+```
+
+The actual `readiness-evidence.json` file is ignored by Git because it is a
+local/live verification artifact.
+
 LLM structured-output smoke check:
 
 ```bash

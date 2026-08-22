@@ -39,6 +39,9 @@ REQUIRED_GITIGNORE = {
     "*.log",
     "generated/",
     "output/",
+    "readiness-evidence.json",
+    "readiness-evidence.*.json",
+    "!docs/readiness-evidence.example.json",
     ".vscode/",
     ".idea/",
 }

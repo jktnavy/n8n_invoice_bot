@@ -33,6 +33,17 @@ Security/readiness gates:
 
 `readiness-gate.py` intentionally reports `V2_READY=NO` until runtime/live production gates are verified.
 
+Runtime/live gate evidence is recorded outside Git in `readiness-evidence.json`.
+Use `docs/readiness-evidence.example.json` as the template, fill only
+non-secret command results, then run:
+
+```bash
+./scripts/readiness-gate.py --evidence readiness-evidence.json
+```
+
+`V2_READY=YES` is reported only when every runtime gate is marked verified with
+timestamp, command, and evidence text.
+
 ## Runtime Services
 
 Recommended native services:

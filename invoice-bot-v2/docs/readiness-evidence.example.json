@@ -1,0 +1,61 @@
+{
+  "schema_version": "invoice-bot-v2-runtime-evidence.v1",
+  "generated_at": "2026-08-22T00:00:00+07:00",
+  "environment": "local-or-vps",
+  "gates": {
+    "renderer_pdf_runtime": {
+      "verified": false,
+      "verified_at": "",
+      "command": "./scripts/test-renderer-container.sh",
+      "evidence": ""
+    },
+    "mysql_bootstrap_runtime": {
+      "verified": false,
+      "verified_at": "",
+      "command": "./scripts/migrate.sh native && ./scripts/validate-db.sh",
+      "evidence": ""
+    },
+    "n8n_import_runtime": {
+      "verified": false,
+      "verified_at": "",
+      "command": "./scripts/import-n8n-workflows.sh auto",
+      "evidence": ""
+    },
+    "telegram_live_getme_and_webhook": {
+      "verified": false,
+      "verified_at": "",
+      "command": "./scripts/test-telegram.sh && ./scripts/telegram-webhook.sh info",
+      "evidence": ""
+    },
+    "llm_live_structured_output": {
+      "verified": false,
+      "verified_at": "",
+      "command": "PYTHONPATH=services/llm-parser python3 -m llm_parser.cli structured-smoke",
+      "evidence": ""
+    },
+    "production_read_only_discovery": {
+      "verified": false,
+      "verified_at": "",
+      "command": "./scripts/discover-environment.sh",
+      "evidence": ""
+    },
+    "production_deploy": {
+      "verified": false,
+      "verified_at": "",
+      "command": "./scripts/healthcheck.sh native",
+      "evidence": ""
+    },
+    "live_acceptance": {
+      "verified": false,
+      "verified_at": "",
+      "command": "manual Telegram scenario A-E runbook",
+      "evidence": ""
+    },
+    "production_regression": {
+      "verified": false,
+      "verified_at": "",
+      "command": "./scripts/preflight-readiness.sh && ./scripts/healthcheck.sh native",
+      "evidence": ""
+    }
+  }
+}
