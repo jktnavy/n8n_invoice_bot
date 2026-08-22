@@ -23,6 +23,8 @@ python3 "$ROOT_DIR/scripts/validate-deploy-static.py"
 python3 "$ROOT_DIR/scripts/validate-schema-static.py"
 python3 "$ROOT_DIR/scripts/sync-n8n-code.py" --check
 python3 "$ROOT_DIR/scripts/validate-n8n-workflows.py"
+python3 "$ROOT_DIR/scripts/scan-secrets.py"
+python3 "$ROOT_DIR/scripts/readiness-gate.py"
 
 python3 -m compileall -q \
   "$ROOT_DIR/services/invoice-core" \

@@ -24,6 +24,15 @@ Static deployment template validation:
 ./scripts/validate-deploy-static.py
 ```
 
+Security/readiness gates:
+
+```bash
+./scripts/scan-secrets.py
+./scripts/readiness-gate.py
+```
+
+`readiness-gate.py` intentionally reports `V2_READY=NO` until runtime/live production gates are verified.
+
 ## Runtime Services
 
 Recommended native services:

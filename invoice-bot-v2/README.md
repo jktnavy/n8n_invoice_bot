@@ -91,6 +91,12 @@ Read-only preflight:
 ./scripts/preflight-readiness.sh
 ```
 
+Readiness status:
+
+```bash
+./scripts/readiness-gate.py
+```
+
 Telegram webhook helper:
 
 ```bash
