@@ -77,7 +77,8 @@ telegram_user_id IS NULL` matching.
 Final invoice cancellation uses `database/queries/void-invoice.sql` and updates
 `invoices.status` to `VOID` without deleting invoices, items, PDFs, deliveries,
 or audit records. Voided invoices are ignored by duplicate and status lookup
-queries.
+queries. The query initializes its selected invoice id before lookup and only
+updates records when a matching invoice is found.
 
 Do not use `SELECT MAX(invoice_number) + 1`.
 

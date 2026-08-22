@@ -148,6 +148,8 @@ def main() -> int:
         ":invoice_id",
         ":invoice_number",
         ":telegram_chat_id",
+        "SET @invoice_id = 0",
+        "@invoice_id > 0",
     ]:
         if required_fragment not in VOID_INVOICE_SQL:
             raise SystemExit(f"void-invoice query missing fragment: {required_fragment}")

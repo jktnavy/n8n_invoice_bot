@@ -8,6 +8,8 @@ USE invoice_bot_v2;
 
 START TRANSACTION;
 
+SET @invoice_id = 0;
+
 SELECT i.id
 INTO @invoice_id
 FROM invoices i
@@ -30,11 +32,13 @@ FOR UPDATE;
 UPDATE invoices
 SET status = 'VOID'
 WHERE id = @invoice_id
+  AND @invoice_id > 0
   AND status <> 'VOID';
 
 UPDATE telegram_conversations
 SET conversation_state = 'IDLE'
 WHERE last_invoice_id = @invoice_id
+  AND @invoice_id > 0
   AND telegram_chat_id = :telegram_chat_id
   AND telegram_user_key = COALESCE(:telegram_user_id, '');
 
