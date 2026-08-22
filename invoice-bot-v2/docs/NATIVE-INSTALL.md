@@ -32,6 +32,17 @@ Never use MySQL root for runtime.
 
 Use `deploy/native.env.example` as the production environment template and fill secrets only on the target server.
 
+After credentials are set on the target server, bootstrap and validate with
+native commands:
+
+```bash
+./scripts/migrate.sh native
+./scripts/validate-db.sh
+```
+
+Use `MYSQL_MIGRATION_USER` and `MYSQL_MIGRATION_PASSWORD` only for the bootstrap
+session if the runtime user is intentionally too restricted to create schemas.
+
 ## Renderer
 
 ```bash
@@ -45,6 +56,12 @@ Validate static deployment templates before installing units:
 
 ```bash
 ./scripts/validate-deploy-static.py
+```
+
+Check runtime health without requiring Docker:
+
+```bash
+./scripts/healthcheck.sh native
 ```
 
 ## n8n

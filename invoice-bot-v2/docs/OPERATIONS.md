@@ -48,6 +48,16 @@ Runtime healthcheck:
 ./scripts/healthcheck.sh
 ```
 
+The script supports `auto`, `native`, and `compose` modes:
+
+```bash
+./scripts/healthcheck.sh native
+./scripts/healthcheck.sh compose
+```
+
+`auto` checks MySQL with native `mysqladmin` when runtime credentials are
+available, then falls back to Docker Compose only when Docker is present.
+
 The LLM provider check runs the deterministic mock provider when
 `LLM_PROVIDER=mock`. For live providers it skips safely until both
 `LLM_API_KEY` and `LLM_MODEL` are present.
@@ -69,6 +79,24 @@ Back up only V2 database:
 
 ```text
 invoice_bot_v2
+```
+
+Native backup and migration commands:
+
+```bash
+./scripts/migrate.sh native
+./scripts/backup-db.sh native
+```
+
+`migrate.sh native` accepts `MYSQL_MIGRATION_USER` and
+`MYSQL_MIGRATION_PASSWORD` when schema bootstrap requires broader privileges
+than the scoped runtime user. Keep the runtime app on `MYSQL_USER`.
+
+Docker Compose remains available for local convenience:
+
+```bash
+./scripts/migrate.sh compose
+./scripts/backup-db.sh compose
 ```
 
 Do not dump unrelated production databases as part of normal V2 operations.

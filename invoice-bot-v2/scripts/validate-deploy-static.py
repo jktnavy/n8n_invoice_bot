@@ -57,6 +57,17 @@ def main() -> int:
         if native_env.get(secret_key, ""):
             failures.append(f"native.env.example: {secret_key} must be blank")
 
+    script_expectations = {
+        "scripts/healthcheck.sh": ["MODE=\"${1:-auto}\"", "mysqladmin ping", "docker compose exec -T mysql", "Usage: $0 [auto|native|compose]"],
+        "scripts/migrate.sh": ["MODE=\"${1:-auto}\"", "MYSQL_MIGRATION_USER", "run_native()", "run_compose()", "MIGRATE=PASS"],
+        "scripts/backup-db.sh": ["MODE=\"${1:-auto}\"", "run_native()", "run_compose()", "Backup written:"],
+    }
+    for relative_path, fragments in script_expectations.items():
+        content = (ROOT_DIR / relative_path).read_text()
+        for fragment in fragments:
+            if fragment not in content:
+                failures.append(f"{relative_path}: missing native/compose operation fragment {fragment!r}")
+
     if failures:
         print("DEPLOY_STATIC_VALIDATION=FAIL")
         for failure in failures:
@@ -79,4 +90,3 @@ def parse_env(path: Path) -> dict[str, str]:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

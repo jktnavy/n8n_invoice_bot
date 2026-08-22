@@ -5,13 +5,17 @@ Greenfield conversational invoice bot for Telegram. V2 is isolated from the lega
 ## Quick Start
 
 1. Copy `.env.example` to `.env` and fill local secrets.
-2. Start local services:
+2. Start local services with Docker Compose when Docker is available:
 
 ```bash
 docker compose up -d
 ```
 
-3. Open n8n at `http://localhost:5678`.
+For a native local or production-style runtime, use `deploy/native.env.example`
+as the environment template and follow `docs/NATIVE-INSTALL.md` after checking
+ports with `./scripts/preflight-readiness.sh`.
+
+3. Open n8n at the configured local port.
 4. Expose the n8n webhook with Cloudflare Tunnel for local Telegram development.
 
 ## Architecture
@@ -63,6 +67,14 @@ Secrets live in `.env` and must not be committed. `.env.example` contains placeh
 ```bash
 docker compose up -d
 docker compose logs -f invoice-renderer
+```
+
+Native runtime operations:
+
+```bash
+./scripts/healthcheck.sh native
+./scripts/migrate.sh native
+./scripts/backup-db.sh native
 ```
 
 ## Test

@@ -8,6 +8,14 @@ docker compose up -d
 
 Docker is optional. Native production is preferred after environment discovery.
 
+Operational scripts support both native and Compose modes:
+
+```bash
+./scripts/healthcheck.sh native
+./scripts/migrate.sh native
+./scripts/backup-db.sh native
+```
+
 Production target:
 
 ```text
