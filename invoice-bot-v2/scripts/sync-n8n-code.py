@@ -29,7 +29,11 @@ WORKFLOW_CODE_MAP = {
         "Parse Telegram Delivery Result": "telegram-delivery-result.js",
     },
     "06-resend-invoice.json": {
+        "Resend Guard": "resolve-resend-lookup.js",
         "Prepare Telegram Document": "prepare-telegram-document.js",
+    },
+    "07-invoice-status.json": {
+        "Status Guard": "resolve-status-lookup.js",
     },
     "08-error-handler.json": {
         "Sanitize Error": "sanitize-error.js",
