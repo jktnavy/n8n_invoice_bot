@@ -14,8 +14,15 @@
         "additionalProperties": false,
         "required": ["target", "field", "value"],
         "properties": {
-          "target": { "type": "string", "description": "draft, item index, or semantic item reference" },
-          "field": { "type": "string" },
+          "target": {
+            "type": "string",
+            "enum": ["draft", "item:return_trip"],
+            "description": "draft or semantic item reference"
+          },
+          "field": {
+            "type": "string",
+            "enum": ["trip_date", "unit_price", "payment_type", "down_payment_amount"]
+          },
           "value": {}
         }
       }
@@ -23,4 +30,3 @@
     "missing_fields": { "type": "array", "items": { "type": "string" } }
   }
 }
-

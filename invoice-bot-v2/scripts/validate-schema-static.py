@@ -9,6 +9,7 @@ QUERY_DIR = ROOT_DIR / "database" / "queries"
 QUERY_TEMPLATES = "\n".join(path.read_text() for path in sorted(QUERY_DIR.glob("*.sql")))
 APPROVE_DRAFT_SQL = (QUERY_DIR / "approve-draft.sql").read_text()
 CREATE_DRAFT_SQL = (QUERY_DIR / "create-draft.sql").read_text()
+PATCH_SCHEMA = (ROOT_DIR / "llm" / "schemas" / "invoice-patch.schema.json").read_text()
 
 REQUIRED_TABLES = {
     "customers",
@@ -58,6 +59,10 @@ def main() -> int:
         for column in ["down_payment_amount", "balance_due"]:
             if column not in query_sql:
                 raise SystemExit(f"{query_name} query must preserve {column}")
+
+    for patch_term in ['"draft"', '"payment_type"', '"down_payment_amount"']:
+        if patch_term not in PATCH_SCHEMA:
+            raise SystemExit(f"invoice patch schema must support payment revision term {patch_term}")
 
     if ":invoice_number" in APPROVE_DRAFT_SQL:
         raise SystemExit("approve-draft must not accept invoice_number as an input parameter")

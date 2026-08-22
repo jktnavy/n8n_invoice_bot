@@ -79,6 +79,8 @@ class InvoiceBotSimulator:
             if operation["target"] == "item:return_trip":
                 item = draft["items"][-1]
                 item[operation["field"]] = operation["value"]
+            elif operation["target"] == "draft" and operation["field"] in {"payment_type", "down_payment_amount"}:
+                draft[operation["field"]] = operation["value"]
         self._recalculate_draft(draft)
         draft["status"] = "AWAITING_APPROVAL"
         return {"type": "PREVIEW", "draft_id": draft["id"], "grand_total": draft["grand_total"], "invoice_number": None}

@@ -124,6 +124,26 @@ class AcceptanceSimulatorTest(unittest.TestCase):
         self.assertEqual(invoice["down_payment_amount"], 1_000_000)
         self.assertEqual(invoice["balance_due"], 9_800_000)
 
+    def test_payment_revision_can_remove_down_payment_before_approval(self):
+        bot = InvoiceBotSimulator()
+
+        preview = bot.handle_message("chat-1", "user-1", DP_CREATE_MESSAGE)
+        draft_id = preview["draft_id"]
+        revised = bot.handle_message("chat-1", "user-1", "tidak usah DP, langsung pelunasan")
+        draft = bot.store.drafts[draft_id]
+
+        self.assertEqual(revised["type"], "PREVIEW")
+        self.assertEqual(revised["draft_id"], draft_id)
+        self.assertEqual(draft["payment_type"], "FULL_PAYMENT")
+        self.assertEqual(draft["down_payment_amount"], 0)
+        self.assertEqual(draft["balance_due"], 0)
+
+        approved = bot.handle_message("chat-1", "user-1", "setuju")
+        invoice = bot.store.invoices[approved["invoice_id"]]
+        self.assertEqual(invoice["payment_type"], "FULL_PAYMENT")
+        self.assertEqual(invoice["down_payment_amount"], 0)
+        self.assertEqual(invoice["balance_due"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()

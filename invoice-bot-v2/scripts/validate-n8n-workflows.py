@@ -23,7 +23,7 @@ WORKFLOW_CONTRACTS = {
         ],
         "code_contains": {
             "Normalize Telegram Message": ["telegram_chat_id", "correlation_id"],
-            "Intent Prefilter": ["CREATE_INVOICE", "APPROVE_DRAFT", "UPDATE_DRAFT"],
+            "Intent Prefilter": ["CREATE_INVOICE", "APPROVE_DRAFT", "UPDATE_DRAFT", "tidak usah dp"],
         },
     },
     "02-create-invoice-draft.json": {

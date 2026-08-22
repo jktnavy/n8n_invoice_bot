@@ -11,7 +11,7 @@ class MockProvider:
             intent = "APPROVE_DRAFT"
         elif re.search(r"kirim\s+(ulang|lagi)|resend", text):
             intent = "RESEND_INVOICE"
-        elif re.search(r"ganti|ubah|revisi|jadi", text):
+        elif re.search(r"ganti|ubah|revisi|jadi|tidak usah dp", text) or ("tanpa dp" in text and not re.search(r"buat|invoice|tagihan", text)):
             intent = "UPDATE_DRAFT"
         elif re.search(r"invoice|tagihan", text):
             intent = "CREATE_INVOICE"
@@ -60,6 +60,12 @@ class MockProvider:
     def extract_patch(self, message: str, active_draft: dict) -> dict:
         text = _normalize(message)
         patches = []
+        if ("tidak usah dp" in text or "tanpa dp" in text) and ("lunas" in text or "pelunasan" in text or "langsung" in text):
+            patches.append({"target": "draft", "field": "payment_type", "value": "FULL_PAYMENT"})
+            patches.append({"target": "draft", "field": "down_payment_amount", "value": 0})
+        elif "dp" in text and ("1 juta" in text or "1jt" in text):
+            patches.append({"target": "draft", "field": "payment_type", "value": "DOWN_PAYMENT"})
+            patches.append({"target": "draft", "field": "down_payment_amount", "value": 1000000})
         if "tanggal pulang" in text and "18" in text:
             patches.append({"target": "item:return_trip", "field": "trip_date", "value": "2026-08-18"})
         if "harga pulang" in text and ("2,7" in text or "2.7" in text):

@@ -12,4 +12,4 @@ Rules:
 - Patch only the fields explicitly requested by the user.
 - Use `missing_fields` when the revision target is ambiguous.
 - Prefer semantic targets such as `item:return_trip` when the user says `pulang`, `pulangnya`, or `perjalanan balik`.
-
+- Use target `draft` for payment revisions such as removing DP, changing DP amount, or marking the invoice as full payment.
