@@ -20,6 +20,15 @@ exports, workflow names, node types, required edges, synchronized Code-node
 snippets, and connection graph integrity. A live n8n import/execution test is
 still a separate runtime gate.
 
+Runtime import helper:
+
+```bash
+./scripts/import-n8n-workflows.sh auto
+```
+
+The helper runs validation before import and supports native n8n or Docker
+Compose mode.
+
 Planned workflows:
 
 ```text
