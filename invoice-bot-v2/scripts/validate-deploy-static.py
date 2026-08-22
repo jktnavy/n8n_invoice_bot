@@ -68,7 +68,15 @@ def main() -> int:
             "Usage: $0 [auto|native|compose]",
             "exit \"$FAILED\"",
         ],
-        "scripts/migrate.sh": ["MODE=\"${1:-auto}\"", "MYSQL_MIGRATION_USER", "run_native()", "run_compose()", "MIGRATE=PASS"],
+        "scripts/migrate.sh": [
+            "MODE=\"${1:-auto}\"",
+            "MYSQL_MIGRATION_USER",
+            "run_native()",
+            "run_compose()",
+            "database/schema.sql",
+            "database/seed.sql",
+            "MIGRATE=PASS",
+        ],
         "scripts/backup-db.sh": ["MODE=\"${1:-auto}\"", "run_native()", "run_compose()", "Backup written:"],
         "scripts/test-renderer-container.sh": [
             "docker build --target test",

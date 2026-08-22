@@ -92,6 +92,9 @@ Native backup and migration commands:
 ./scripts/backup-db.sh native
 ```
 
+`migrate.sh` applies `database/schema.sql` and `database/seed.sql` in both
+native and Compose modes so invoice sequence bootstrap is included.
+
 `migrate.sh native` accepts `MYSQL_MIGRATION_USER` and
 `MYSQL_MIGRATION_PASSWORD` when schema bootstrap requires broader privileges
 than the scoped runtime user. Keep the runtime app on `MYSQL_USER`.

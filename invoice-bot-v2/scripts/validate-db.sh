@@ -10,6 +10,14 @@ if [[ -z "${MYSQL_PASSWORD:-}" ]]; then
   echo "MYSQL_PASSWORD is required for DB validation"
   exit 1
 fi
+if [[ ! "$DB_NAME" =~ ^[A-Za-z0-9_]+$ ]]; then
+  echo "MYSQL_DATABASE must contain only letters, numbers, and underscores"
+  exit 1
+fi
+if [[ ! "$DB_PORT" =~ ^[0-9]+$ ]]; then
+  echo "MYSQL_PORT must be numeric"
+  exit 1
+fi
 
 MYSQL=(mysql --batch --skip-column-names -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" "-p${MYSQL_PASSWORD}" "$DB_NAME")
 
@@ -57,6 +65,12 @@ if [[ "$source_draft_unique" != "1" ]]; then
   exit 1
 fi
 
+sequence_seed="$("${MYSQL[@]}" -e "SELECT COUNT(*) FROM invoice_sequences WHERE company_code='STA' AND sequence_year=2026 AND last_number >= 0;")"
+if [[ "$sequence_seed" != "1" ]]; then
+  echo "SEQUENCE_SEED=FAIL company_code=STA sequence_year=2026"
+  exit 1
+fi
+
 delivery_columns="$("${MYSQL[@]}" -e "SELECT COUNT(DISTINCT column_name) FROM information_schema.columns WHERE table_schema='${DB_NAME}' AND table_name='invoice_deliveries' AND column_name IN ('target_chat_id','provider_message_id','provider_error_message','provider_response');")"
 if [[ "$delivery_columns" != "4" ]]; then
   echo "DELIVERY_COLUMNS=FAIL"
@@ -73,5 +87,6 @@ echo "MYSQL_BOOTSTRAP=PASS"
 echo "DATABASE=$DB_NAME"
 printf 'TABLES=%s\n' "${EXPECTED_TABLES[*]}"
 echo "SEQUENCE_STRATEGY=invoice_sequences primary key + transaction FOR UPDATE"
+echo "SEQUENCE_SEED=STA:2026"
 echo "CONVERSATION_UNIQUENESS=telegram_chat_id + generated telegram_user_key"
 echo "FOREIGN_KEYS=$fk_count"

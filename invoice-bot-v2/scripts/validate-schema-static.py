@@ -4,6 +4,7 @@ from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 SCHEMA = (ROOT_DIR / "database" / "schema.sql").read_text()
+SEED = (ROOT_DIR / "database" / "seed.sql").read_text()
 SEQUENCE_EXAMPLE = (ROOT_DIR / "database" / "sequence-allocation.example.sql").read_text()
 QUERY_DIR = ROOT_DIR / "database" / "queries"
 QUERY_TEMPLATES = "\n".join(path.read_text() for path in sorted(QUERY_DIR.glob("*.sql")))
@@ -44,6 +45,14 @@ def main() -> int:
 
     if "PRIMARY KEY (company_code, sequence_year)" not in SCHEMA:
         raise SystemExit("invoice_sequences must key company_code + sequence_year")
+
+    for seed_fragment in [
+        "INSERT INTO invoice_sequences",
+        "VALUES ('STA', 2026, 0)",
+        "ON DUPLICATE KEY UPDATE last_number = last_number",
+    ]:
+        if seed_fragment not in SEED:
+            raise SystemExit(f"seed.sql missing invoice sequence seed fragment: {seed_fragment}")
 
     if "UNIQUE KEY uq_invoices_source_draft (source_draft_id)" not in SCHEMA:
         raise SystemExit("invoices must uniquely bind source_draft_id to prevent duplicate approval inserts")

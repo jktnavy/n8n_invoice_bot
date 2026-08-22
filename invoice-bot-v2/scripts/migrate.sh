@@ -18,10 +18,16 @@ run_native() {
     -P "${MYSQL_PORT:-3306}" \
     -u "$db_user" \
     "-p$db_password" < database/schema.sql
+  mysql \
+    -h "${MYSQL_HOST:-127.0.0.1}" \
+    -P "${MYSQL_PORT:-3306}" \
+    -u "$db_user" \
+    "-p$db_password" < database/seed.sql
 }
 
 run_compose() {
   docker compose exec -T mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD:-}" < database/schema.sql
+  docker compose exec -T mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD:-}" < database/seed.sql
 }
 
 case "$MODE" in

@@ -43,6 +43,11 @@ COMMIT
 inside the approval transaction. Do not pass a user-provided invoice number
 into approval.
 
+`database/seed.sql` initializes the `STA` sequence row for 2026 with
+`last_number = 0`. `scripts/migrate.sh` applies both `schema.sql` and
+`seed.sql`; `scripts/validate-db.sh` verifies that the sequence seed exists
+before reporting `MYSQL_BOOTSTRAP=PASS`.
+
 `invoices.source_draft_id` is unique so the same draft cannot create two final
 invoice records. Delivery retry/resend creates a new delivery attempt, not a new
 invoice.
