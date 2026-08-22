@@ -74,9 +74,10 @@ otherwise be stored as `NULL`.
 Conversation lookup queries use the same generated key instead of `OR
 telegram_user_id IS NULL` matching.
 
-Duplicate and status/detail lookups are scoped to the source draft chat/user.
-Explicit `invoice_id` or `invoice_number` lookup still requires the invoice to
-come from the same Telegram chat/user that created the source draft.
+Duplicate, status/detail, and final cancellation lookups are scoped to the
+source draft chat/user. Explicit `invoice_id` or `invoice_number` lookup still
+requires the invoice to come from the same Telegram chat/user that created the
+source draft.
 
 Final invoice cancellation uses `database/queries/void-invoice.sql` and updates
 `invoices.status` to `VOID` without deleting invoices, items, PDFs, deliveries,

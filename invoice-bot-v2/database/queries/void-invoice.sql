@@ -3,7 +3,7 @@ USE invoice_bot_v2;
 -- Parameters:
 -- :invoice_id optional explicit invoice id
 -- :invoice_number optional explicit invoice number
--- :telegram_chat_id required when resolving conversation last invoice
+-- :telegram_chat_id required for ownership check and conversation fallback
 -- :telegram_user_id optional Telegram user id
 
 START TRANSACTION;
@@ -13,10 +13,22 @@ SET @invoice_id = 0;
 SELECT i.id
 INTO @invoice_id
 FROM invoices i
+JOIN invoice_drafts sd
+  ON sd.id = i.source_draft_id
 LEFT JOIN telegram_conversations c ON c.last_invoice_id = i.id
 WHERE (
-    (:invoice_id IS NOT NULL AND i.id = :invoice_id)
-    OR (:invoice_number IS NOT NULL AND i.invoice_number = :invoice_number)
+    (
+      :invoice_id IS NOT NULL
+      AND i.id = :invoice_id
+      AND sd.telegram_chat_id = :telegram_chat_id
+      AND sd.telegram_user_id <=> :telegram_user_id
+    )
+    OR (
+      :invoice_number IS NOT NULL
+      AND i.invoice_number = :invoice_number
+      AND sd.telegram_chat_id = :telegram_chat_id
+      AND sd.telegram_user_id <=> :telegram_user_id
+    )
     OR (
       :invoice_id IS NULL
       AND :invoice_number IS NULL

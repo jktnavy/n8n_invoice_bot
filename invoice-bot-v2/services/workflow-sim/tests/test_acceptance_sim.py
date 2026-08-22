@@ -174,6 +174,18 @@ class AcceptanceSimulatorTest(unittest.TestCase):
         self.assertEqual(status_from_other_chat["type"], "NO_INVOICE")
         self.assertEqual(detail_from_other_chat["type"], "NO_INVOICE")
 
+    def test_cancel_final_invoice_is_scoped_to_source_owner(self):
+        bot = InvoiceBotSimulator()
+        bot.handle_message("chat-1", "user-1", CREATE_MESSAGE)
+        first = bot.handle_message("chat-1", "user-1", "setuju")
+
+        cancel_from_other_user = bot.handle_message("chat-1", "user-2", f"batalkan invoice {first['invoice_number']}")
+        cancel_from_other_chat = bot.handle_message("chat-2", "user-1", f"batalkan invoice {first['invoice_number']}")
+
+        self.assertEqual(cancel_from_other_user["type"], "NO_INVOICE")
+        self.assertEqual(cancel_from_other_chat["type"], "NO_INVOICE")
+        self.assertEqual(bot.store.invoices[first["invoice_id"]]["status"], "SENT")
+
     def test_scenario_e_ambiguous_request_asks_missing_fields(self):
         bot = InvoiceBotSimulator()
         result = bot.handle_message("chat-1", "user-1", "buat invoice PT ABC medium bus ke Puncak")
