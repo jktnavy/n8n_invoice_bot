@@ -12,6 +12,7 @@ APPROVE_DRAFT_SQL = (QUERY_DIR / "approve-draft.sql").read_text()
 CREATE_DRAFT_SQL = (QUERY_DIR / "create-draft.sql").read_text()
 GET_STATUS_SQL = (QUERY_DIR / "get-invoice-status.sql").read_text()
 VOID_INVOICE_SQL = (QUERY_DIR / "void-invoice.sql").read_text()
+UPDATE_RENDER_RESULT_SQL = (QUERY_DIR / "update-render-result.sql").read_text()
 PATCH_SCHEMA = (ROOT_DIR / "llm" / "schemas" / "invoice-patch.schema.json").read_text()
 
 REQUIRED_TABLES = {
@@ -144,6 +145,19 @@ def main() -> int:
 
     if re.search(r"\bDELETE\b", VOID_INVOICE_SQL, re.IGNORECASE):
         raise SystemExit("void-invoice must not delete invoice records")
+
+    for required_fragment in [
+        ":render_succeeded",
+        "WHEN :render_succeeded = TRUE THEN 'GENERATED'",
+        "ELSE 'GENERATION_FAILED'",
+        "pdf_sha256 REGEXP '^[a-f0-9]{64}$'",
+        "pdf_size > 0",
+        "status IN ('APPROVED', 'GENERATING', 'GENERATION_FAILED')",
+    ]:
+        if required_fragment not in UPDATE_RENDER_RESULT_SQL:
+            raise SystemExit(f"update-render-result query missing fragment: {required_fragment}")
+    if ":status" in UPDATE_RENDER_RESULT_SQL:
+        raise SystemExit("update-render-result must derive status from render_succeeded")
 
     print("SCHEMA_STATIC_VALIDATION=PASS")
     return 0

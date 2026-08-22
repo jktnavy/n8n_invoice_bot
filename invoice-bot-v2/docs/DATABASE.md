@@ -52,6 +52,11 @@ before reporting `MYSQL_BOOTSTRAP=PASS`.
 invoice records. Delivery retry/resend creates a new delivery attempt, not a new
 invoice.
 
+Renderer completion uses `database/queries/update-render-result.sql`. The
+workflow passes `render_succeeded`; the query derives `GENERATED` or
+`GENERATION_FAILED` and only stores PDF metadata when the render succeeded with
+a non-empty path, 64-character lowercase SHA-256, and positive file size.
+
 `telegram_conversations` uses a generated `telegram_user_key` based on
 `COALESCE(telegram_user_id, '')` for the unique chat/user key. This prevents
 duplicate conversation rows when Telegram user id is unavailable and would
