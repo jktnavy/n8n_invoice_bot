@@ -51,6 +51,19 @@
         720,
         0
       ]
+    },
+    {
+      "parameters": {
+        "jsCode": "function rupiah(amount) {\n  return 'Rp' + Number(amount || 0).toLocaleString('id-ID');\n}\n\nfunction formatDate(value) {\n  if (!value) return '-';\n  return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(value));\n}\n\nconst lines = [\n  '📄 PRATINJAU INVOICE',\n  '',\n  'Kepada:',\n  $json.customer_name,\n  '',\n];\n\nfor (const item of $json.items || []) {\n  lines.push(formatDate(item.trip_date));\n  lines.push(`${item.vehicle_type}`);\n  lines.push(`${item.quantity} unit × ${rupiah(item.unit_price)}`);\n  lines.push(`= ${rupiah(item.line_total)}`);\n  lines.push(`${item.pickup || '-'} → ${item.destination || '-'}`);\n  lines.push('');\n}\n\nlines.push('TOTAL');\nlines.push(rupiah($json.grand_total));\nlines.push('');\nlines.push('Pembayaran:');\nlines.push($json.payment_type === 'FULL_PAYMENT' ? 'LUNAS / FULL PAYMENT' : $json.payment_type);\n\nif (($json.included || []).length) {\n  lines.push('');\n  lines.push('Termasuk:');\n  for (const item of $json.included) lines.push(`✓ ${item}`);\n}\n\nif (($json.excluded || []).length) {\n  lines.push('');\n  lines.push('Tidak termasuk:');\n  for (const item of $json.excluded) lines.push(`- ${item}`);\n}\n\nlines.push('');\nlines.push('Sudah benar?');\nlines.push('Balas: setuju atau tulis revisinya.');\n\nreturn [{ json: { ...$json, preview_text: lines.join('\\n') } }];\n"
+      },
+      "id": "render-preview",
+      "name": "Render Preview",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        0
+      ]
     }
   ],
   "connections": {
@@ -81,6 +94,17 @@
         [
           {
             "node": "Content Fingerprint",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Content Fingerprint": {
+      "main": [
+        [
+          {
+            "node": "Render Preview",
             "type": "main",
             "index": 0
           }

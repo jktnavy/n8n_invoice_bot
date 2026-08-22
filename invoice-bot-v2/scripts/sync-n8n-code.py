@@ -9,6 +9,10 @@ WORKFLOW_CODE_MAP = {
     "02-create-invoice-draft.json": {
         "Calculate Invoice": "calculate-invoice.js",
         "Content Fingerprint": "content-fingerprint.js",
+        "Render Preview": "render-preview.js",
+    },
+    "05-send-invoice.json": {
+        "Parse Telegram Delivery Result": "telegram-delivery-result.js",
     }
 }
 
@@ -51,4 +55,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

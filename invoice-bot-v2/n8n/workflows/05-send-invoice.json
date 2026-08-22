@@ -8,7 +8,10 @@
       "name": "Execute Workflow Trigger",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1,
-      "position": [0, 0]
+      "position": [
+        0,
+        0
+      ]
     },
     {
       "parameters": {
@@ -18,17 +21,53 @@
       "name": "Delivery Guard",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [240, 0]
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $json.telegram_response || $json;\nconst ok = response.ok === true && response.result && response.result.message_id;\n\nreturn [\n  {\n    json: {\n      ...$json,\n      delivery_status: ok ? 'sent' : 'failed',\n      provider_message_id: ok ? String(response.result.message_id) : null,\n      provider_error_code: ok ? null : String(response.error_code || ''),\n      provider_error_message: ok ? null : String(response.description || 'Telegram delivery failed'),\n      provider_response: response,\n    },\n  },\n];\n"
+      },
+      "id": "parse-telegram-delivery-result",
+      "name": "Parse Telegram Delivery Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ]
     }
   ],
   "connections": {
     "Execute Workflow Trigger": {
-      "main": [[{ "node": "Delivery Guard", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Delivery Guard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delivery Guard": {
+      "main": [
+        [
+          {
+            "node": "Parse Telegram Delivery Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "settings": { "executionOrder": "v1" },
+  "settings": {
+    "executionOrder": "v1"
+  },
   "staticData": {
     "description": "Send existing invoice PDF via Telegram sendDocument. Success requires ok=true and result.message_id."
   }
 }
-
