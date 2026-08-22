@@ -78,9 +78,13 @@ def main() -> int:
 
 def load_or_initialize_payload(path: Path, template: Path, environment: str) -> dict:
     if path.exists():
-        payload = json.loads(path.read_text())
+        text = path.read_text()
+        assert_no_secret_like_value(text, "existing evidence file")
+        payload = json.loads(text)
     elif template.exists():
-        payload = json.loads(template.read_text())
+        text = template.read_text()
+        assert_no_secret_like_value(text, "evidence template")
+        payload = json.loads(text)
     else:
         payload = {"schema_version": EVIDENCE_SCHEMA_VERSION, "generated_at": "", "environment": environment, "gates": {}}
 

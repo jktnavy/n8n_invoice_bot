@@ -118,6 +118,24 @@ class ReadinessEvidenceTest(unittest.TestCase):
         with self.assertRaises(SystemExit):
             record_evidence.validate_gate_command("llm_live_structured_output", "./scripts/test-telegram.sh")
 
+    def test_recorder_rejects_existing_evidence_file_with_secret_like_value(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            evidence = Path(tmpdir) / "readiness-evidence.json"
+            evidence.write_text(
+                json.dumps(
+                    {
+                        "schema_version": record_evidence.EVIDENCE_SCHEMA_VERSION,
+                        "generated_at": "2026-08-22T00:00:00+07:00",
+                        "environment": "unit-test",
+                        "gates": {},
+                        "note": "api_key=should-not-be-here",
+                    }
+                )
+            )
+
+            with self.assertRaises(SystemExit):
+                record_evidence.load_or_initialize_payload(evidence, Path(tmpdir) / "missing-template.json", "unit-test")
+
     def test_recorder_allows_matching_command(self):
         record_evidence.validate_gate_command(
             "llm_live_structured_output",
