@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://statransport.local/schemas/invoice-patch.v1.json",
+  "title": "InvoicePatchExtractionV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "patches", "missing_fields"],
+  "properties": {
+    "schema_version": { "const": "invoice-patch.v1" },
+    "patches": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["target", "field", "value"],
+        "properties": {
+          "target": { "type": "string", "description": "draft, item index, or semantic item reference" },
+          "field": { "type": "string" },
+          "value": {}
+        }
+      }
+    },
+    "missing_fields": { "type": "array", "items": { "type": "string" } }
+  }
+}
+

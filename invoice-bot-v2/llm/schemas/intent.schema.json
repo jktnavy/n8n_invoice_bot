@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://statransport.local/schemas/intent.v1.json",
+  "title": "IntentClassificationV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "intent", "confidence"],
+  "properties": {
+    "schema_version": { "const": "intent.v1" },
+    "intent": {
+      "type": "string",
+      "enum": [
+        "CREATE_INVOICE",
+        "UPDATE_DRAFT",
+        "APPROVE_DRAFT",
+        "CANCEL_DRAFT",
+        "GET_INVOICE",
+        "GET_STATUS",
+        "RESEND_INVOICE",
+        "CANCEL_INVOICE",
+        "HELP",
+        "UNKNOWN"
+      ]
+    },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "reason": { "type": "string" }
+  }
+}
+

@@ -1,0 +1,18 @@
+[Unit]
+Description=STA Invoice Bot V2 n8n
+After=network.target
+
+[Service]
+Type=simple
+User=invoicebotv2
+Group=invoicebotv2
+WorkingDirectory=/opt/invoice-bot-v2
+EnvironmentFile=/opt/invoice-bot-v2/.env
+ExecStart=/usr/bin/env npx n8n start
+Restart=on-failure
+RestartSec=10
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
+

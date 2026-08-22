@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <title>Invoice {{ invoice.invoice_number }}</title>
+  <style>
+    @page { size: A4; margin: 0; }
+    body { margin: 0; font-family: DejaVu Sans, Arial, sans-serif; color: #17212b; font-size: 9.25pt; }
+    .page { padding: 7mm 16mm 8mm; }
+    .header { display: table; width: 100%; }
+    .company, .doc { display: table-cell; vertical-align: top; }
+    .company { width: 58%; }
+    .doc { width: 42%; text-align: right; }
+    .logo { width: 56mm; }
+    .tagline { font-weight: 700; margin-top: 1mm; }
+    .muted { color: #536170; }
+    .title { font-size: 22pt; font-weight: 700; color: #12344d; letter-spacing: 1.5px; }
+    .number { font-size: 10.5pt; font-weight: 700; margin-top: 1mm; }
+    .strip { margin-top: 5mm; padding: 3mm 4mm; background: #12344d; color: white; border-radius: 1.5mm; display: table; width: 100%; box-sizing: border-box; }
+    .strip div { display: table-cell; width: 33.33%; vertical-align: top; }
+    .strip .right { text-align: right; }
+    .label { color: #9fb8c9; font-size: 7pt; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+    .value { font-size: 9.5pt; font-weight: 700; margin-top: 0.5mm; }
+    .hero { margin-top: 5mm; border-top: 1px solid #ccd7e0; border-bottom: 1px solid #ccd7e0; padding: 3mm 0; }
+    .customer-label { color: #176fa8; font-size: 8pt; font-weight: 700; text-transform: uppercase; }
+    .customer { font-size: 14pt; font-weight: 700; margin-top: 1mm; }
+    table.items { width: 100%; border-collapse: collapse; margin-top: 5mm; }
+    .items th { background: #12344d; color: white; padding: 2.2mm 2.5mm; text-align: left; font-size: 8pt; text-transform: uppercase; }
+    .items td { padding: 2.2mm 2.5mm; border-bottom: 1px solid #ccd7e0; vertical-align: top; }
+    .num { text-align: right; font-variant-numeric: tabular-nums; }
+    .center { text-align: center; }
+    .vehicle { font-weight: 700; text-transform: uppercase; }
+    .route { color: #536170; margin-top: 0.5mm; }
+    .summary { display: table; width: 100%; margin-top: 5mm; }
+    .notes, .total-box { display: table-cell; vertical-align: top; }
+    .notes { width: 52%; padding-right: 6mm; }
+    .total-box { width: 48%; text-align: right; }
+    .section-title { font-weight: 700; color: #176fa8; margin-bottom: 1mm; }
+    .note-line { margin-bottom: 0.8mm; }
+    .total { background: #12344d; color: white; padding: 4mm 5mm; border-radius: 1.5mm; }
+    .total .amount { font-size: 19pt; font-weight: 700; margin-top: 1mm; }
+    .words { margin-top: 2mm; color: #536170; font-style: italic; }
+    .signature { display: table; width: 100%; margin-top: 7mm; }
+    .sig-note, .sig-box { display: table-cell; vertical-align: bottom; }
+    .sig-note { width: 55%; color: #536170; }
+    .sig-box { width: 45%; text-align: right; }
+    .stamp { width: 26mm; display: block; margin-left: auto; margin-top: 1mm; }
+    .signame { font-weight: 700; font-size: 10pt; margin-top: 0.5mm; }
+    .footer { border-top: 1px solid #12344d; margin-top: 4mm; padding-top: 2mm; color: #536170; font-size: 8pt; }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="header">
+      <div class="company">
+        <img class="logo" src="{{ logo_data_uri }}" alt="STA Transport">
+        <div class="tagline">{{ invoice.company.tagline }}</div>
+        <div class="muted">{{ invoice.company.address }}</div>
+      </div>
+      <div class="doc">
+        <div class="title">TRANSPORT INVOICE</div>
+        <div class="number">{{ invoice.invoice_number }}</div>
+        <div class="muted">{{ invoice_date }}</div>
+      </div>
+    </section>
+
+    <section class="strip">
+      <div><p class="label">Manifest Perjalanan</p><p class="value">{{ trip_meta }}</p></div>
+      <div><p class="label">Periode</p><p class="value">{{ period }}</p></div>
+      <div class="right"><p class="label">Status</p><p class="value">{{ invoice.status_label }}</p></div>
+    </section>
+
+    <section class="hero">
+      <div class="customer-label">Kepada</div>
+      <div class="customer">{{ invoice.customer_name }}</div>
+    </section>
+
+    <table class="items">
+      <thead>
+        <tr>
+          <th width="8%">Ref</th>
+          <th width="46%">Layanan / Rute</th>
+          <th width="10%" class="center">Unit</th>
+          <th width="19%" class="num">Harga/Unit</th>
+          <th width="17%" class="num">Jumlah</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td>TR-{{ "%02d"|format(loop.index) }}</td>
+          <td>
+            <div class="vehicle">{{ item.vehicle_type }}</div>
+            <div>{{ date_long(item.trip_date) }}</div>
+            <div class="route">{{ item.pickup or "-" }} &rarr; {{ item.destination or "-" }}</div>
+          </td>
+          <td class="center">{{ item.quantity.normalize() }} {{ item.uom }}</td>
+          <td class="num">{{ rupiah(item.unit_price) }}</td>
+          <td class="num">{{ rupiah(item.line_total) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <section class="summary">
+      <div class="notes">
+        <div class="section-title">Ketentuan Harga</div>
+        {% if invoice.included %}
+          <div class="note-line"><strong>Termasuk:</strong> {{ invoice.included|join(", ") }}</div>
+        {% endif %}
+        {% if invoice.excluded %}
+          <div class="note-line"><strong>Tidak termasuk:</strong> {{ invoice.excluded|join(", ") }}</div>
+        {% endif %}
+        {% if invoice.notes %}
+          <div class="note-line">{{ invoice.notes }}</div>
+        {% endif %}
+      </div>
+      <div class="total-box">
+        <div class="total">
+          <div class="label">Total Tagihan</div>
+          <div class="amount">{{ grand_total }}</div>
+        </div>
+        <div class="words">Terbilang: {{ amount_words }}</div>
+      </div>
+    </section>
+
+    <section class="signature">
+      <div class="sig-note">
+        Pembayaran dilakukan sesuai kesepakatan dan ketentuan layanan STA Transport.
+      </div>
+      <div class="sig-box">
+        <div>{{ invoice.company.signatory_city }}, {{ invoice_date }}</div>
+        <div>Hormat kami,</div>
+        <img class="stamp" src="{{ stamp_data_uri }}" alt="Cap STA">
+        <div class="signame">{{ invoice.company.signatory_name }}</div>
+        <div class="muted">{{ invoice.company.signatory_position }}</div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      {{ invoice.company.phone }} &nbsp; | &nbsp; {{ invoice.company.whatsapp }} &nbsp; | &nbsp; {{ invoice.company.email }} &nbsp; | &nbsp; {{ invoice.company.website }}
+    </footer>
+  </main>
+</body>
+</html>
+

@@ -1,0 +1,35 @@
+{
+  "schema_version": "invoice-draft.v1",
+  "customer": {
+    "name": "PT Nusa Horizon Wisata"
+  },
+  "items": [
+    {
+      "trip_date": "2026-08-15",
+      "vehicle_type": "Medium Bus",
+      "quantity": 2,
+      "pickup": "Harapan Indah Bekasi",
+      "destination": "Cisarua Puncak",
+      "unit_price": 2800000
+    },
+    {
+      "trip_date": "2026-08-17",
+      "vehicle_type": "Medium Bus",
+      "quantity": 2,
+      "pickup": "Cisarua Puncak",
+      "destination": "Jakarta",
+      "unit_price": 2600000
+    }
+  ],
+  "payment": {
+    "type": "FULL_PAYMENT",
+    "down_payment_amount": null
+  },
+  "notes": {
+    "included": ["kendaraan", "pengemudi", "BBM"],
+    "excluded": ["tol", "parkir", "tips pengemudi"],
+    "free_text": null
+  },
+  "missing_fields": []
+}
+

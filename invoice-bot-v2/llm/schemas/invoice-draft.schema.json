@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://statransport.local/schemas/invoice-draft.v1.json",
+  "title": "InvoiceDraftExtractionV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "customer", "items", "payment", "notes", "missing_fields"],
+  "properties": {
+    "schema_version": { "const": "invoice-draft.v1" },
+    "customer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": { "type": ["string", "null"] }
+      }
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["trip_date", "vehicle_type", "quantity", "pickup", "destination", "unit_price"],
+        "properties": {
+          "trip_date": { "type": ["string", "null"], "format": "date" },
+          "vehicle_type": { "type": ["string", "null"] },
+          "quantity": { "type": ["integer", "null"], "minimum": 1 },
+          "pickup": { "type": ["string", "null"] },
+          "destination": { "type": ["string", "null"] },
+          "unit_price": { "type": ["integer", "null"], "minimum": 0 }
+        }
+      }
+    },
+    "payment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "down_payment_amount"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["FULL_PAYMENT", "DOWN_PAYMENT", "BALANCE_PAYMENT", "UNSPECIFIED"]
+        },
+        "down_payment_amount": { "type": ["integer", "null"], "minimum": 0 }
+      }
+    },
+    "notes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["included", "excluded", "free_text"],
+      "properties": {
+        "included": { "type": "array", "items": { "type": "string" } },
+        "excluded": { "type": "array", "items": { "type": "string" } },
+        "free_text": { "type": ["string", "null"] }
+      }
+    },
+    "missing_fields": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["customer.name", "items.trip_date", "items.vehicle_type", "items.quantity", "items.pickup", "items.destination", "items.unit_price", "payment.type"]
+      }
+    }
+  }
+}
+

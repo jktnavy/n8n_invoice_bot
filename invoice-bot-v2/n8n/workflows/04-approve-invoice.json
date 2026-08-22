@@ -1,0 +1,12 @@
+{
+  "name": "04-approve-invoice",
+  "nodes": [],
+  "connections": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": {
+    "description": "Load active draft, allocate invoice number in transaction, create final invoice, render PDF, trigger delivery."
+  }
+}
+

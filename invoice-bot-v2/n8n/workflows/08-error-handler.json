@@ -1,0 +1,12 @@
+{
+  "name": "08-error-handler",
+  "nodes": [],
+  "connections": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": {
+    "description": "Centralized error workflow. Store sanitized workflow, node, correlation_id, error_type, error_message."
+  }
+}
+

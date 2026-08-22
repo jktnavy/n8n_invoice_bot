@@ -1,0 +1,12 @@
+{
+  "name": "03-update-invoice-draft",
+  "nodes": [],
+  "connections": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": {
+    "description": "Extract patch, update active draft only, recalculate, send new preview."
+  }
+}
+

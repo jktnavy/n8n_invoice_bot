@@ -1,0 +1,18 @@
+[Unit]
+Description=STA Invoice Bot V2 FastAPI Renderer
+After=network.target
+
+[Service]
+Type=simple
+User=invoicebotv2
+Group=invoicebotv2
+WorkingDirectory=/opt/invoice-bot-v2/services/invoice-renderer
+EnvironmentFile=/opt/invoice-bot-v2/.env
+ExecStart=/opt/invoice-bot-v2/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port $INVOICE_RENDERER_PORT
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
