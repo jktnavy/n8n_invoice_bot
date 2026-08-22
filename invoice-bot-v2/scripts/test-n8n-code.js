@@ -73,6 +73,18 @@ const captionMessage = runSnippet('n8n/code/normalize-telegram-message.js', {
 assert.strictEqual(captionMessage.raw_message, 'Buat invoice dari lampiran ini');
 assert.strictEqual(captionMessage.telegram_chat_id, '789');
 
+const captionFallbackMessage = runSnippet('n8n/code/normalize-telegram-message.js', {
+  body: {
+    message: {
+      message_id: 459,
+      text: '   ',
+      caption: 'Status invoice terakhir',
+      chat: { id: 789 },
+    },
+  },
+})[0].json;
+assert.strictEqual(captionFallbackMessage.raw_message, 'Status invoice terakhir');
+
 assert.throws(
   () => runSnippet('n8n/code/normalize-telegram-message.js', {
     body: {
