@@ -65,6 +65,9 @@ Telegram target chat for delivery handoff.
 `05-send-invoice` prepares a `sendDocument` payload from `target_chat_id` and
 the rendered PDF path, then maps Telegram response metadata for persistence.
 
+`06-resend-invoice` reuses the resolved existing invoice/PDF payload and prepares
+another `sendDocument` request. It must not allocate a new invoice number.
+
 `content-fingerprint.js` uses Node built-in `crypto`; set:
 
 ```text

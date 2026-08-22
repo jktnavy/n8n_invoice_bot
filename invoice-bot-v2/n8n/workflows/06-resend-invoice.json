@@ -8,7 +8,10 @@
       "name": "Execute Workflow Trigger",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1,
-      "position": [0, 0]
+      "position": [
+        0,
+        0
+      ]
     },
     {
       "parameters": {
@@ -18,17 +21,53 @@
       "name": "Resend Guard",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [240, 0]
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const invoiceId = $json.invoice_id;\nconst invoiceNumber = $json.invoice_number || $json.render_request?.invoice?.invoice_number || null;\nconst targetChatId = $json.target_chat_id;\nconst pdfPath = $json.pdf_path || $json.render_response?.file_path || null;\n\nif (!invoiceId) {\n  throw new Error('invoice_id is required');\n}\nif (!targetChatId || String(targetChatId).trim() === '') {\n  throw new Error('target_chat_id is required');\n}\nif (!pdfPath || String(pdfPath).trim() === '') {\n  throw new Error('pdf_path is required');\n}\nif (!String(pdfPath).toLowerCase().endsWith('.pdf')) {\n  throw new Error('pdf_path must point to a PDF file');\n}\n\nconst caption = invoiceNumber\n  ? `Invoice ${invoiceNumber} - STA Transport`\n  : 'Invoice STA Transport';\n\nreturn [\n  {\n    json: {\n      ...$json,\n      invoice_id: Number(invoiceId),\n      target_chat_id: String(targetChatId),\n      pdf_path: String(pdfPath),\n      telegram_method: 'sendDocument',\n      telegram_document_payload: {\n        chat_id: String(targetChatId),\n        document_path: String(pdfPath),\n        caption,\n      },\n      delivery_status: 'sending',\n      delivery_payload_ready: true,\n    },\n  },\n];\n"
+      },
+      "id": "prepare-telegram-document",
+      "name": "Prepare Telegram Document",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ]
     }
   ],
   "connections": {
     "Execute Workflow Trigger": {
-      "main": [[{ "node": "Resend Guard", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Resend Guard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resend Guard": {
+      "main": [
+        [
+          {
+            "node": "Prepare Telegram Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "settings": { "executionOrder": "v1" },
+  "settings": {
+    "executionOrder": "v1"
+  },
   "staticData": {
     "description": "Resolve existing invoice/PDF, create a new delivery attempt, and never create a new invoice number."
   }
 }
-

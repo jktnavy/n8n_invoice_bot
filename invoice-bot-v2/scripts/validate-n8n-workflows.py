@@ -118,10 +118,17 @@ WORKFLOW_CONTRACTS = {
         "nodes": {
             "Execute Workflow Trigger": "n8n-nodes-base.executeWorkflowTrigger",
             "Resend Guard": "n8n-nodes-base.code",
+            "Prepare Telegram Document": "n8n-nodes-base.code",
         },
-        "edges": [("Execute Workflow Trigger", "Resend Guard")],
+        "edges": [
+            ("Execute Workflow Trigger", "Resend Guard"),
+            ("Resend Guard", "Prepare Telegram Document"),
+        ],
         "code_contains": {
             "Resend Guard": ["invoice_number", "resend_requested"],
+        },
+        "snippet_files": {
+            "Prepare Telegram Document": "n8n/code/prepare-telegram-document.js",
         },
     },
     "07-invoice-status.json": {

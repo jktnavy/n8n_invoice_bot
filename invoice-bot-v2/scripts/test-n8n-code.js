@@ -143,6 +143,18 @@ assert.strictEqual(telegramDocument.telegram_document_payload.chat_id, '123456')
 assert.strictEqual(telegramDocument.telegram_document_payload.document_path, '/data/invoices/INV-0001.pdf');
 assert.match(telegramDocument.telegram_document_payload.caption, /INV-0001\/STA\/VIII\/2026/);
 
+const resendDocument = runSnippet('n8n/code/prepare-telegram-document.js', {
+  invoice_id: 1,
+  invoice_number: 'INV-0001/STA/VIII/2026',
+  target_chat_id: '123456',
+  pdf_path: '/data/invoices/INV-0001.pdf',
+  resend_requested: true,
+})[0].json;
+assert.strictEqual(resendDocument.telegram_method, 'sendDocument');
+assert.strictEqual(resendDocument.telegram_document_payload.document_path, telegramDocument.telegram_document_payload.document_path);
+assert.strictEqual(resendDocument.invoice_id, telegramDocument.invoice_id);
+assert.strictEqual(resendDocument.resend_requested, true);
+
 const delivery = runSnippet('n8n/code/telegram-delivery-result.js', {
   telegram_response: { ok: true, result: { message_id: 12345 } },
 })[0].json;

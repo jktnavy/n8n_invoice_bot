@@ -23,7 +23,10 @@ WORKFLOW_CODE_MAP = {
     "05-send-invoice.json": {
         "Prepare Telegram Document": "prepare-telegram-document.js",
         "Parse Telegram Delivery Result": "telegram-delivery-result.js",
-    }
+    },
+    "06-resend-invoice.json": {
+        "Prepare Telegram Document": "prepare-telegram-document.js",
+    },
 }
 
 
