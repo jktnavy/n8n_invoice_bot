@@ -13,6 +13,7 @@ CREATE_DRAFT_SQL = (QUERY_DIR / "create-draft.sql").read_text()
 GET_STATUS_SQL = (QUERY_DIR / "get-invoice-status.sql").read_text()
 VOID_INVOICE_SQL = (QUERY_DIR / "void-invoice.sql").read_text()
 UPDATE_RENDER_RESULT_SQL = (QUERY_DIR / "update-render-result.sql").read_text()
+UPDATE_DELIVERY_RESULT_SQL = (QUERY_DIR / "update-delivery-result.sql").read_text()
 PATCH_SCHEMA = (ROOT_DIR / "llm" / "schemas" / "invoice-patch.schema.json").read_text()
 
 REQUIRED_TABLES = {
@@ -158,6 +159,20 @@ def main() -> int:
             raise SystemExit(f"update-render-result query missing fragment: {required_fragment}")
     if ":status" in UPDATE_RENDER_RESULT_SQL:
         raise SystemExit("update-render-result must derive status from render_succeeded")
+
+    for required_fragment in [
+        ":delivery_status",
+        "attempt_count = attempt_count + 1",
+        ":delivery_status IN ('sent', 'failed')",
+        "provider_message_id = CASE WHEN :delivery_status = 'sent' THEN :provider_message_id ELSE NULL END",
+        "provider_error_message = CASE WHEN :delivery_status = 'failed' THEN :provider_error_message ELSE NULL END",
+        "TRIM(CAST(:provider_message_id AS CHAR)) <> ''",
+        "d.status IN ('sent', 'failed')",
+    ]:
+        if required_fragment not in UPDATE_DELIVERY_RESULT_SQL:
+            raise SystemExit(f"update-delivery-result query missing fragment: {required_fragment}")
+    if ":attempt_count" in UPDATE_DELIVERY_RESULT_SQL:
+        raise SystemExit("update-delivery-result must increment attempt_count in the database")
 
     print("SCHEMA_STATIC_VALIDATION=PASS")
     return 0

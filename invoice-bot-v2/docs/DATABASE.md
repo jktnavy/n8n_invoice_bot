@@ -57,6 +57,11 @@ workflow passes `render_succeeded`; the query derives `GENERATED` or
 `GENERATION_FAILED` and only stores PDF metadata when the render succeeded with
 a non-empty path, 64-character lowercase SHA-256, and positive file size.
 
+Telegram delivery completion uses `database/queries/update-delivery-result.sql`.
+The query increments `attempt_count` in the database, accepts only `sent` or
+`failed`, requires `provider_message_id` for successful sends, and derives the
+invoice status from the stored delivery result.
+
 `telegram_conversations` uses a generated `telegram_user_key` based on
 `COALESCE(telegram_user_id, '')` for the unique chat/user key. This prevents
 duplicate conversation rows when Telegram user id is unavailable and would
