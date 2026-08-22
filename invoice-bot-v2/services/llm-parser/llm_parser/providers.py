@@ -1,6 +1,7 @@
 import os
 from dataclasses import dataclass
 from typing import Protocol
+from urllib.parse import urlparse
 
 
 class LLMProvider(Protocol):
@@ -40,12 +41,25 @@ def provider_from_env() -> LLMProvider:
     if config.provider in {"deepseek", "openrouter"}:
         if not config.base_url:
             raise ValueError(f"LLM_BASE_URL is required for {config.provider} provider")
+        validate_responses_base_url(config.base_url, config.provider)
         from .openai_provider import OpenAIProvider
 
         return OpenAIProvider(config)
     if config.provider == "gemini":
         return NotImplementedProvider(config)
     raise ValueError(f"Unsupported LLM_PROVIDER: {config.provider}")
+
+
+def validate_responses_base_url(base_url: str, provider: str) -> None:
+    parsed = urlparse(base_url)
+    if parsed.scheme != "https" or not parsed.netloc:
+        raise ValueError(f"LLM_BASE_URL for {provider} must be an HTTPS URL")
+    if parsed.username or parsed.password:
+        raise ValueError(f"LLM_BASE_URL for {provider} must not include credentials")
+    if parsed.query or parsed.fragment:
+        raise ValueError(f"LLM_BASE_URL for {provider} must not include query or fragment")
+    if not parsed.path.rstrip("/").endswith("/responses"):
+        raise ValueError(f"LLM_BASE_URL for {provider} must point to a /responses endpoint")
 
 
 class NotImplementedProvider:

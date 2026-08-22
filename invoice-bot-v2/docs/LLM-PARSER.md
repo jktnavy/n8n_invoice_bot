@@ -45,6 +45,8 @@ Provider switching:
 - `LLM_PROVIDER=deepseek` or `LLM_PROVIDER=openrouter` uses the same
   Responses-compatible adapter and requires `LLM_BASE_URL` to be set to that
   provider's compatible `/responses` endpoint.
+  `LLM_BASE_URL` must be HTTPS, must not include credentials, query strings, or
+  fragments, and must end with `/responses`.
 - `LLM_PROVIDER=gemini` is reserved behind the same interface but intentionally
   not enabled until a provider-specific structured output adapter is added.
 

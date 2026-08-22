@@ -1,7 +1,7 @@
 import unittest
 
 from llm_parser.openai_provider import OpenAIProvider, _parse_structured_response, _validate_structured_payload
-from llm_parser.providers import NotImplementedProvider, ProviderConfig, provider_from_env
+from llm_parser.providers import NotImplementedProvider, ProviderConfig, provider_from_env, validate_responses_base_url
 
 
 class OpenAIProviderTest(unittest.TestCase):
@@ -58,6 +58,23 @@ class OpenAIProviderTest(unittest.TestCase):
                     os.environ.pop(key, None)
                 else:
                     os.environ[key] = value
+
+    def test_openai_compatible_provider_rejects_invalid_base_url(self):
+        invalid_urls = [
+            "http://llm.example.test/v1/responses",
+            "https://user:pass@llm.example.test/v1/responses",
+            "https://llm.example.test/v1/chat/completions",
+            "https://llm.example.test/v1/responses?token=secret",
+            "not-a-url",
+        ]
+        for url in invalid_urls:
+            with self.subTest(url=url):
+                with self.assertRaises(ValueError):
+                    validate_responses_base_url(url, "openrouter")
+
+    def test_openai_compatible_provider_allows_https_responses_url(self):
+        validate_responses_base_url("https://llm.example.test/v1/responses", "openrouter")
+        validate_responses_base_url("https://llm.example.test/v1/responses/", "deepseek")
 
     def test_gemini_remains_reserved_provider(self):
         import os
