@@ -67,6 +67,11 @@ The query increments `attempt_count` in the database, accepts only `sent` or
 `failed`, requires `provider_message_id` for successful sends, and derives the
 invoice status from the stored delivery result.
 
+Telegram delivery creation uses `database/queries/create-delivery.sql`. It only
+creates a delivery row when the invoice has a generated PDF, the invoice status
+is `GENERATED`, `DELIVERY_FAILED`, or `SENT`, and `target_chat_id` is present.
+If those guards do not match, it returns `delivery_id = 0`.
+
 `telegram_conversations` uses a generated `telegram_user_key` based on
 `COALESCE(telegram_user_id, '')` for the unique chat/user key. This prevents
 duplicate conversation rows when Telegram user id is unavailable and would

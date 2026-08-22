@@ -10,6 +10,7 @@ QUERY_DIR = ROOT_DIR / "database" / "queries"
 QUERY_TEMPLATES = "\n".join(path.read_text() for path in sorted(QUERY_DIR.glob("*.sql")))
 APPROVE_DRAFT_SQL = (QUERY_DIR / "approve-draft.sql").read_text()
 CREATE_DRAFT_SQL = (QUERY_DIR / "create-draft.sql").read_text()
+CREATE_DELIVERY_SQL = (QUERY_DIR / "create-delivery.sql").read_text()
 DUPLICATE_CHECK_SQL = (QUERY_DIR / "duplicate-check.sql").read_text()
 GET_STATUS_SQL = (QUERY_DIR / "get-invoice-status.sql").read_text()
 VOID_INVOICE_SQL = (QUERY_DIR / "void-invoice.sql").read_text()
@@ -176,6 +177,19 @@ def main() -> int:
 
     if re.search(r"\bDELETE\b", VOID_INVOICE_SQL, re.IGNORECASE):
         raise SystemExit("void-invoice must not delete invoice records")
+
+    for required_fragment in [
+        "SET @delivery_id = 0",
+        "INSERT INTO invoice_deliveries",
+        "FROM invoices",
+        "status IN ('GENERATED', 'DELIVERY_FAILED', 'SENT')",
+        "pdf_path IS NOT NULL",
+        "TRIM(pdf_path) <> ''",
+        "TRIM(CAST(:target_chat_id AS CHAR)) <> ''",
+        "SET @delivery_id = IF(ROW_COUNT() = 1, LAST_INSERT_ID(), 0)",
+    ]:
+        if required_fragment not in CREATE_DELIVERY_SQL:
+            raise SystemExit(f"create-delivery query missing guarded insert fragment: {required_fragment}")
 
     for required_fragment in [
         ":render_succeeded",
