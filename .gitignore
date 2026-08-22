@@ -1,0 +1,42 @@
+# ============================================================
+# Gitignore — n8n_invoice_bot (STA Transport)
+# ============================================================
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Secrets & credentials
+.env
+.env.*
+!.env.example
+auth.json
+*.pem
+*.key
+*.p12
+secrets/
+
+# Logs
+*.log
+logs/
+
+# Generated invoice PDFs (jangan commit hasil render)
+invoices/
+*.pdf
+!docs/designs/*.pdf
+
+# Temp
+*.tmp
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

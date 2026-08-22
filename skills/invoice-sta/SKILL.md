@@ -190,7 +190,6 @@ revisi/preview invoice yang sedang dibuat.
    - exit code: `0` = sukses penuh, `20` = Telegram delivery gagal.
 
 7. **Balas konfirmasi HANYA berdasarkan bukti output script:**
-
    - Jika output mengandung `TELEGRAM_SEND_OK=true` DAN `TELEGRAM_MESSAGE_ID=<angka>`
      DAN `INVOICE_RESULT=OK` (exit 0), balas:
      ```
