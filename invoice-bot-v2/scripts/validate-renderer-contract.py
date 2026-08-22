@@ -7,6 +7,7 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT_DIR / "tests" / "fixtures" / "pt-nusa-render-request.json"
 RENDERER_APP_DIR = ROOT_DIR / "services" / "invoice-renderer" / "app"
+PREPARE_RENDER_SNIPPET = ROOT_DIR / "n8n" / "code" / "prepare-render-request.js"
 
 REQUIRED_INVOICE_FIELDS = {
     "invoice_number",
@@ -48,6 +49,7 @@ def main() -> int:
         failures.extend(validate_invoice_payload(invoice))
 
     failures.extend(validate_renderer_has_no_database_access())
+    failures.extend(validate_n8n_renderer_handoff_contract())
 
     if failures:
         print("RENDERER_CONTRACT_VALIDATION=FAIL")
@@ -116,6 +118,20 @@ def validate_renderer_has_no_database_access() -> list[str]:
         for name, pattern in FORBIDDEN_RENDERER_PATTERNS.items():
             if pattern.search(text):
                 failures.append(f"{path.relative_to(ROOT_DIR)}: forbidden renderer database access marker {name}")
+    return failures
+
+
+def validate_n8n_renderer_handoff_contract() -> list[str]:
+    text = PREPARE_RENDER_SNIPPET.read_text()
+    failures = []
+    for required_fragment in [
+        "render_request: { invoice: normalizedInvoice }",
+        "FULL_VALIDATED_INVOICE_PAYLOAD",
+        "delivery_payload_ready",
+        "target_chat_id",
+    ]:
+        if required_fragment not in text:
+            failures.append(f"{PREPARE_RENDER_SNIPPET.relative_to(ROOT_DIR)} missing {required_fragment}")
     return failures
 
 

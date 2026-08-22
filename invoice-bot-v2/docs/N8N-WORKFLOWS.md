@@ -49,12 +49,17 @@ Deterministic snippets:
 - `apply-patch.js`
 - `calculate-invoice.js`
 - `content-fingerprint.js`
+- `prepare-render-request.js`
 - `render-preview.js`
 - `telegram-delivery-result.js`
 
 `03-update-invoice-draft` applies an allowed patch to the active draft, then
 recalculates totals, refreshes the content fingerprint, and renders a new
 preview without allocating an invoice number.
+
+`04-approve-invoice` expects the approved invoice payload loaded from the
+database transaction, validates it as a full renderer request, and carries the
+Telegram target chat for delivery handoff.
 
 `content-fingerprint.js` uses Node built-in `crypto`; set:
 

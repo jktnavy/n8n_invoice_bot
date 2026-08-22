@@ -79,10 +79,17 @@ WORKFLOW_CONTRACTS = {
         "nodes": {
             "Execute Workflow Trigger": "n8n-nodes-base.executeWorkflowTrigger",
             "Approval Guard": "n8n-nodes-base.code",
+            "Prepare Render Request": "n8n-nodes-base.code",
         },
-        "edges": [("Execute Workflow Trigger", "Approval Guard")],
+        "edges": [
+            ("Execute Workflow Trigger", "Approval Guard"),
+            ("Approval Guard", "Prepare Render Request"),
+        ],
         "code_contains": {
             "Approval Guard": ["AWAITING_APPROVAL", "approval_received"],
+        },
+        "snippet_files": {
+            "Prepare Render Request": "n8n/code/prepare-render-request.js",
         },
     },
     "05-send-invoice.json": {

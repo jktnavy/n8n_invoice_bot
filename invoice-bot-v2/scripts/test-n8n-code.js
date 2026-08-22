@@ -106,6 +106,31 @@ assert.strictEqual(recalculatedPayment.payment_type, 'FULL_PAYMENT');
 assert.strictEqual(recalculatedPayment.down_payment_amount, 0);
 assert.strictEqual(recalculatedPayment.balance_due, 0);
 
+const approvedInvoice = {
+  invoice_id: 1,
+  invoice_number: 'INV-0001/STA/VIII/2026',
+  invoice_date: '2026-08-22',
+  customer_name: calculated.customer_name,
+  payment_type: calculated.payment_type,
+  subtotal: calculated.subtotal,
+  discount: calculated.discount,
+  additional_fee: calculated.additional_fee,
+  grand_total: calculated.grand_total,
+  down_payment_amount: calculated.down_payment_amount,
+  balance_due: calculated.balance_due,
+  included: ['kendaraan', 'pengemudi', 'BBM'],
+  excluded: ['tol', 'parkir', 'tips pengemudi'],
+  items: calculated.items.map((item) => ({ ...item, uom: 'Unit' })),
+};
+const renderHandoff = runSnippet('n8n/code/prepare-render-request.js', {
+  invoice: approvedInvoice,
+  telegram_chat_id: '123456',
+})[0].json;
+assert.strictEqual(renderHandoff.renderer_contract, 'FULL_VALIDATED_INVOICE_PAYLOAD');
+assert.strictEqual(renderHandoff.target_chat_id, '123456');
+assert.strictEqual(renderHandoff.render_request.invoice.invoice_number, 'INV-0001/STA/VIII/2026');
+assert.strictEqual(renderHandoff.render_request.invoice.status_label, 'LUNAS');
+
 const delivery = runSnippet('n8n/code/telegram-delivery-result.js', {
   telegram_response: { ok: true, result: { message_id: 12345 } },
 })[0].json;
