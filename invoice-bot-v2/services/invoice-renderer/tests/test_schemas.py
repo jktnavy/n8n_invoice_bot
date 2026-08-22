@@ -80,3 +80,30 @@ def test_invoice_payload_rejects_invalid_invoice_number_format():
     invalid["invoice_number"] = "../../invoice.pdf"
     with pytest.raises(ValidationError):
         InvoicePayload.model_validate(invalid)
+
+
+def test_invoice_payload_rejects_invalid_status_label():
+    invalid = payload()
+    invalid["status_label"] = "PAID<script>"
+    with pytest.raises(ValidationError):
+        InvoicePayload.model_validate(invalid)
+
+
+def test_invoice_payload_rejects_status_label_that_conflicts_with_balance_due():
+    invalid = payload()
+    invalid["payment_type"] = "DOWN_PAYMENT"
+    invalid["down_payment_amount"] = "1000000"
+    invalid["balance_due"] = "9800000"
+    invalid["status_label"] = "LUNAS"
+    with pytest.raises(ValidationError):
+        InvoicePayload.model_validate(invalid)
+
+
+def test_invoice_payload_accepts_unpaid_status_label_when_balance_due_exists():
+    data = payload()
+    data["payment_type"] = "DOWN_PAYMENT"
+    data["down_payment_amount"] = "1000000"
+    data["balance_due"] = "9800000"
+    data["status_label"] = "BELUM LUNAS"
+    invoice = InvoicePayload.model_validate(data)
+    assert invoice.status_label == "BELUM LUNAS"

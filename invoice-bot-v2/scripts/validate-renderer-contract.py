@@ -136,9 +136,17 @@ def validate_n8n_renderer_handoff_contract() -> list[str]:
         "delivery_payload_ready",
         "target_chat_id",
         "invoice_number has invalid format",
+        "status_label: balanceDue === 0 ? 'LUNAS' : 'BELUM LUNAS'",
     ]:
         if required_fragment not in text:
             failures.append(f"{PREPARE_RENDER_SNIPPET.relative_to(ROOT_DIR)} missing {required_fragment}")
+    schema_text = (RENDERER_APP_DIR / "schemas.py").read_text()
+    for required_fragment in [
+        'StatusLabel = Literal["LUNAS", "BELUM LUNAS"]',
+        "status_label must match balance_due",
+    ]:
+        if required_fragment not in schema_text:
+            failures.append(f"services/invoice-renderer/app/schemas.py missing {required_fragment}")
     return failures
 
 

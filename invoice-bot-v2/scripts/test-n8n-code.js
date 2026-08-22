@@ -184,6 +184,24 @@ assert.strictEqual(renderHandoff.renderer_contract, 'FULL_VALIDATED_INVOICE_PAYL
 assert.strictEqual(renderHandoff.target_chat_id, '123456');
 assert.strictEqual(renderHandoff.render_request.invoice.invoice_number, 'INV-0001/STA/VIII/2026');
 assert.strictEqual(renderHandoff.render_request.invoice.status_label, 'LUNAS');
+
+const renderHandoffWithInjectedStatus = runSnippet('n8n/code/prepare-render-request.js', {
+  invoice: { ...approvedInvoice, status_label: 'PAID<script>' },
+  telegram_chat_id: '123456',
+})[0].json;
+assert.strictEqual(renderHandoffWithInjectedStatus.render_request.invoice.status_label, 'LUNAS');
+
+const unpaidRenderHandoff = runSnippet('n8n/code/prepare-render-request.js', {
+  invoice: {
+    ...approvedInvoice,
+    payment_type: 'DOWN_PAYMENT',
+    down_payment_amount: 1000000,
+    balance_due: 9800000,
+    status_label: 'LUNAS',
+  },
+  telegram_chat_id: '123456',
+})[0].json;
+assert.strictEqual(unpaidRenderHandoff.render_request.invoice.status_label, 'BELUM LUNAS');
 assert.throws(
   () => runSnippet('n8n/code/prepare-render-request.js', {
     invoice: { ...approvedInvoice, invoice_number: '../../invoice.pdf' },

@@ -5,6 +5,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 PaymentType = Literal["FULL_PAYMENT", "DOWN_PAYMENT", "BALANCE_PAYMENT", "UNSPECIFIED"]
+StatusLabel = Literal["LUNAS", "BELUM LUNAS"]
 INVOICE_NUMBER_PATTERN = r"^INV-\d{4}/STA/(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII)/\d{4}$"
 
 
@@ -58,7 +59,7 @@ class InvoicePayload(BaseModel):
     included: list[str] = Field(default_factory=list)
     excluded: list[str] = Field(default_factory=list)
     notes: str | None = None
-    status_label: str = "LUNAS"
+    status_label: StatusLabel = "LUNAS"
     items: list[InvoiceItem] = Field(min_length=1)
     company: CompanyInfo = Field(default_factory=CompanyInfo)
 
@@ -82,6 +83,9 @@ class InvoicePayload(BaseModel):
         expected_balance = Decimal("0") if self.payment_type == "FULL_PAYMENT" else self.grand_total - self.down_payment_amount
         if self.balance_due != expected_balance:
             raise ValueError(f"balance_due must match payment type and down payment, expected {expected_balance}")
+        expected_status_label = "LUNAS" if self.balance_due == 0 else "BELUM LUNAS"
+        if self.status_label != expected_status_label:
+            raise ValueError(f"status_label must match balance_due, expected {expected_status_label}")
         return self
 
 

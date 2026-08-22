@@ -85,7 +85,7 @@ const normalizedInvoice = {
   grand_total: grandTotal,
   down_payment_amount: downPaymentAmount,
   balance_due: balanceDue,
-  status_label: invoice.status_label || (balanceDue === 0 ? 'LUNAS' : 'BELUM LUNAS'),
+  status_label: balanceDue === 0 ? 'LUNAS' : 'BELUM LUNAS',
 };
 
 return [
