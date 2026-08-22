@@ -85,6 +85,8 @@ Healthcheck:
 ./scripts/healthcheck.sh
 ```
 
+CI workflow template: `ci/github-actions-invoice-bot-v2-ci.yml`
+
 ## Production Deployment
 
 Production target:

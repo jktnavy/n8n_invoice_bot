@@ -6,6 +6,9 @@ IMAGE_NAME="${IMAGE_NAME:-invoice-renderer-test}"
 
 cd "$ROOT_DIR"
 
+rm -rf "$ROOT_DIR/generated"
+mkdir -p "$ROOT_DIR/generated"
+
 docker build --target test -t "$IMAGE_NAME" services/invoice-renderer
 docker run --rm "$IMAGE_NAME"
 
@@ -22,8 +25,11 @@ if [[ -z "$PDF_PATH" ]]; then
   exit 1
 fi
 
+echo "PDF_GENERATED=YES"
+echo "PDF_PATH=$PDF_PATH"
+echo "PDF_SIZE=$(stat -c%s "$PDF_PATH")"
+echo "PDF_TYPE=$(file -b "$PDF_PATH")"
 file "$PDF_PATH"
 test -s "$PDF_PATH"
 head -c 4 "$PDF_PATH" | grep -q '%PDF'
-sha256sum "$PDF_PATH"
-
+echo "PDF_SHA256=$(sha256sum "$PDF_PATH" | awk '{print $1}')"

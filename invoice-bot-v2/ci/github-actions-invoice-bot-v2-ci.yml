@@ -1,0 +1,101 @@
+name: Invoice Bot V2 CI
+
+on:
+  push:
+    branches:
+      - feat/invoice-bot-v2
+    paths:
+      - "invoice-bot-v2/**"
+      - ".github/workflows/invoice-bot-v2-ci.yml"
+  pull_request:
+    paths:
+      - "invoice-bot-v2/**"
+      - ".github/workflows/invoice-bot-v2-ci.yml"
+
+env:
+  CI_MYSQL_ROOT_PASSWORD: ci_root_password
+  CI_DB_PASSWORD: ci_invoice_password
+
+jobs:
+  host-safe:
+    name: Host-safe tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: invoice-bot-v2
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Run host-safe tests
+        run: ./scripts/test-local.sh
+
+  renderer-container:
+    name: Renderer container PDF validation
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: invoice-bot-v2
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build renderer and generate PT Nusa PDF
+        run: ./scripts/test-renderer-container.sh
+      - name: Upload generated PDF artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pt-nusa-rendered-invoice
+          path: invoice-bot-v2/generated/*.pdf
+          if-no-files-found: error
+
+  mysql-bootstrap:
+    name: MySQL bootstrap validation
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: ${{ env.CI_MYSQL_ROOT_PASSWORD }}
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pci_root_password"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    defaults:
+      run:
+        working-directory: invoice-bot-v2
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install MySQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mysql-client
+      - name: Bootstrap schema
+        env:
+          MYSQL_PWD: ${{ env.CI_MYSQL_ROOT_PASSWORD }}
+        run: |
+          mysql -h 127.0.0.1 -P 3306 -uroot < database/schema.sql
+          mysql -h 127.0.0.1 -P 3306 -uroot < database/seed.sql
+      - name: Create scoped runtime user
+        env:
+          MYSQL_PWD: ${{ env.CI_MYSQL_ROOT_PASSWORD }}
+        run: |
+          mysql -h 127.0.0.1 -P 3306 -uroot <<SQL
+          CREATE USER IF NOT EXISTS 'invoice_bot_v2'@'%' IDENTIFIED BY '${CI_DB_PASSWORD}';
+          GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX, REFERENCES
+          ON invoice_bot_v2.* TO 'invoice_bot_v2'@'%';
+          FLUSH PRIVILEGES;
+          SQL
+      - name: Validate V2 database
+        env:
+          MYSQL_HOST: 127.0.0.1
+          MYSQL_PORT: "3306"
+          MYSQL_DATABASE: invoice_bot_v2
+          MYSQL_USER: invoice_bot_v2
+          MYSQL_PASSWORD: ${{ env.CI_DB_PASSWORD }}
+        run: ./scripts/validate-db.sh

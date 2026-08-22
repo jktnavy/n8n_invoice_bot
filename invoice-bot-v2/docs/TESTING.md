@@ -30,6 +30,16 @@ Renderer container tests:
 ./scripts/test-renderer-container.sh
 ```
 
+GitHub Actions CI runs:
+
+- host-safe tests
+- renderer container PDF validation
+- MySQL bootstrap validation
+
+Generated test PDFs are uploaded as CI artifacts and remain ignored by Git.
+
+Because GitHub may reject workflow-file pushes from tokens without `workflow` scope, the workflow is stored as `ci/github-actions-invoice-bot-v2-ci.yml`. Copy it to `.github/workflows/invoice-bot-v2-ci.yml` from an account/token with workflow permission to activate it.
+
 ## Integration
 
 - MySQL schema
