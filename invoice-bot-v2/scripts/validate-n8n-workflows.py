@@ -154,6 +154,7 @@ WORKFLOW_CONTRACTS = {
             "Resend Guard": ["invoice_number", "resend_requested"],
         },
         "snippet_files": {
+            "Resend Guard": "n8n/code/resolve-resend-lookup.js",
             "Prepare Telegram Document": "n8n/code/prepare-telegram-document.js",
         },
     },
@@ -166,6 +167,9 @@ WORKFLOW_CONTRACTS = {
         "edges": [("Execute Workflow Trigger", "Status Guard")],
         "code_contains": {
             "Status Guard": ["invoice_number", "last_invoice_id", "status_lookup_requested"],
+        },
+        "snippet_files": {
+            "Status Guard": "n8n/code/resolve-status-lookup.js",
         },
     },
     "08-error-handler.json": {

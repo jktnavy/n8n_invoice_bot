@@ -12,7 +12,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const invoiceId = $json.invoice_id || $json.last_invoice_id || null;\nconst invoiceNumber = $json.invoice_number || null;\nif (!invoiceId && !invoiceNumber) throw new Error('invoice identifier is required');\nreturn [{ json: { ...$json, invoice_id: invoiceId, invoice_number: invoiceNumber, status_lookup_requested: true } }];"
+        "jsCode": "const invoiceNumber = String($json.invoice_number ?? '').trim() || null;\nconst explicitInvoiceId = $json.invoice_id || null;\nconst fallbackInvoiceId = $json.last_invoice_id || null;\nconst invoiceId = invoiceNumber ? null : (explicitInvoiceId || fallbackInvoiceId || null);\n\nif (!invoiceId && !invoiceNumber) {\n  throw new Error('invoice identifier is required');\n}\n\nreturn [\n  {\n    json: {\n      ...$json,\n      invoice_id: invoiceId,\n      invoice_number: invoiceNumber,\n      status_lookup_requested: true,\n    },\n  },\n];"
       },
       "id": "status-guard",
       "name": "Status Guard",

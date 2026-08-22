@@ -15,7 +15,7 @@
     },
     {
       "parameters": {
-        "jsCode": "if (!$json.invoice_id && !$json.invoice_number) throw new Error('invoice identifier is required');\nreturn [{ json: { ...$json, resend_requested: true } }];"
+        "jsCode": "const invoiceNumber = String($json.invoice_number ?? '').trim() || null;\nconst explicitInvoiceId = $json.invoice_id || null;\nconst fallbackInvoiceId = $json.last_invoice_id || null;\nconst invoiceId = invoiceNumber ? null : (explicitInvoiceId || fallbackInvoiceId || null);\n\nif (!invoiceId && !invoiceNumber) {\n  throw new Error('invoice identifier is required');\n}\n\nreturn [\n  {\n    json: {\n      ...$json,\n      invoice_id: invoiceId,\n      invoice_number: invoiceNumber,\n      resend_requested: true,\n    },\n  },\n];"
       },
       "id": "resend-guard",
       "name": "Resend Guard",

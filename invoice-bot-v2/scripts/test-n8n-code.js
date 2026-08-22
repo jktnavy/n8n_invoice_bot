@@ -135,6 +135,35 @@ const detailIntent = runSnippet('n8n/code/intent-prefilter.js', {
 })[0].json;
 assert.strictEqual(detailIntent.intent, 'GET_INVOICE');
 
+const statusLookupByLastInvoice = runSnippet('n8n/code/resolve-status-lookup.js', {
+  last_invoice_id: 11,
+})[0].json;
+assert.strictEqual(statusLookupByLastInvoice.invoice_id, 11);
+assert.strictEqual(statusLookupByLastInvoice.invoice_number, null);
+assert.strictEqual(statusLookupByLastInvoice.status_lookup_requested, true);
+
+const statusLookupByExplicitNumber = runSnippet('n8n/code/resolve-status-lookup.js', {
+  invoice_id: 11,
+  last_invoice_id: 12,
+  invoice_number: ' INV-0002/STA/VIII/2026 ',
+})[0].json;
+assert.strictEqual(statusLookupByExplicitNumber.invoice_id, null);
+assert.strictEqual(statusLookupByExplicitNumber.invoice_number, 'INV-0002/STA/VIII/2026');
+
+const resendLookupByExplicitNumber = runSnippet('n8n/code/resolve-resend-lookup.js', {
+  invoice_id: 11,
+  last_invoice_id: 12,
+  invoice_number: 'INV-0002/STA/VIII/2026',
+})[0].json;
+assert.strictEqual(resendLookupByExplicitNumber.invoice_id, null);
+assert.strictEqual(resendLookupByExplicitNumber.invoice_number, 'INV-0002/STA/VIII/2026');
+assert.strictEqual(resendLookupByExplicitNumber.resend_requested, true);
+
+assert.throws(
+  () => runSnippet('n8n/code/resolve-status-lookup.js', {}),
+  /invoice identifier is required/,
+);
+
 const calculated = runSnippet('n8n/code/calculate-invoice.js', invoice)[0].json;
 assert.strictEqual(calculated.items[0].line_total, 5600000);
 assert.strictEqual(calculated.items[1].line_total, 5200000);
