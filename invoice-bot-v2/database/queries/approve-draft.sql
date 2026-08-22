@@ -2,10 +2,10 @@ USE invoice_bot_v2;
 
 -- Parameters:
 -- :draft_id, :telegram_chat_id, :telegram_user_id, :company_code,
--- :sequence_year, :invoice_number, :invoice_date
+-- :sequence_year, :invoice_date
 --
--- The caller must compute :invoice_number from the allocated sequence:
--- INV-0001/STA/VIII/2026
+-- The invoice number is generated from @allocated_sequence inside this
+-- transaction. Do not accept invoice_number from user input.
 
 START TRANSACTION;
 
@@ -28,6 +28,12 @@ FOR UPDATE;
 
 UPDATE invoice_sequences
 SET last_number = last_number + 1
+WHERE company_code = :company_code
+  AND sequence_year = :sequence_year;
+
+SELECT last_number
+INTO @allocated_sequence
+FROM invoice_sequences
 WHERE company_code = :company_code
   AND sequence_year = :sequence_year;
 
@@ -55,7 +61,20 @@ INSERT INTO invoices (
   content_fingerprint
 )
 SELECT
-  :invoice_number,
+  CONCAT(
+    'INV-',
+    LPAD(@allocated_sequence, 4, '0'),
+    '/',
+    UPPER(:company_code),
+    '/',
+    ELT(
+      MONTH(:invoice_date),
+      'I', 'II', 'III', 'IV', 'V', 'VI',
+      'VII', 'VIII', 'IX', 'X', 'XI', 'XII'
+    ),
+    '/',
+    YEAR(:invoice_date)
+  ),
   c.id,
   d.customer_name,
   :invoice_date,
@@ -116,7 +135,13 @@ SET active_draft_id = NULL,
 WHERE telegram_chat_id = :telegram_chat_id
   AND (telegram_user_id = :telegram_user_id OR telegram_user_id IS NULL);
 
+SELECT invoice_number
+INTO @invoice_number
+FROM invoices
+WHERE id = @invoice_id;
+
 COMMIT;
 
 SELECT @invoice_id AS invoice_id;
-
+SELECT @allocated_sequence AS allocated_sequence;
+SELECT @invoice_number AS invoice_number;

@@ -29,9 +29,15 @@ START TRANSACTION
 INSERT sequence row if missing
 SELECT sequence row FOR UPDATE
 UPDATE last_number = last_number + 1
+SELECT last_number INTO @allocated_sequence
 INSERT invoice + invoice_items
 COMMIT
 ```
+
+`database/queries/approve-draft.sql` formats `invoice_number` from
+`@allocated_sequence`, company code, roman invoice month, and invoice year
+inside the approval transaction. Do not pass a user-provided invoice number
+into approval.
 
 Do not use `SELECT MAX(invoice_number) + 1`.
 

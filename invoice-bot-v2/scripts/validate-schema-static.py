@@ -5,7 +5,9 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).resolve().parents[1]
 SCHEMA = (ROOT_DIR / "database" / "schema.sql").read_text()
 SEQUENCE_EXAMPLE = (ROOT_DIR / "database" / "sequence-allocation.example.sql").read_text()
-QUERY_TEMPLATES = "\n".join(path.read_text() for path in sorted((ROOT_DIR / "database" / "queries").glob("*.sql")))
+QUERY_DIR = ROOT_DIR / "database" / "queries"
+QUERY_TEMPLATES = "\n".join(path.read_text() for path in sorted(QUERY_DIR.glob("*.sql")))
+APPROVE_DRAFT_SQL = (QUERY_DIR / "approve-draft.sql").read_text()
 
 REQUIRED_TABLES = {
     "customers",
@@ -41,6 +43,20 @@ def main() -> int:
 
     if "target_chat_id" not in SCHEMA:
         raise SystemExit("invoice_deliveries must store target_chat_id")
+
+    if ":invoice_number" in APPROVE_DRAFT_SQL:
+        raise SystemExit("approve-draft must not accept invoice_number as an input parameter")
+
+    for required_fragment in [
+        "INTO @allocated_sequence",
+        "LPAD(@allocated_sequence, 4, '0')",
+        "UPPER(:company_code)",
+        "MONTH(:invoice_date)",
+        "YEAR(:invoice_date)",
+        "INTO @invoice_number",
+    ]:
+        if required_fragment not in APPROVE_DRAFT_SQL:
+            raise SystemExit(f"approve-draft missing invoice number allocation fragment: {required_fragment}")
 
     print("SCHEMA_STATIC_VALIDATION=PASS")
     return 0
