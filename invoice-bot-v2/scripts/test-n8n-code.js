@@ -60,6 +60,40 @@ const manualMessage = runSnippet('n8n/code/normalize-telegram-message.js', {
 assert.strictEqual(manualMessage.raw_message, 'status invoice');
 assert.strictEqual(manualMessage.telegram_chat_id, 'chat-1');
 
+const captionMessage = runSnippet('n8n/code/normalize-telegram-message.js', {
+  body: {
+    message: {
+      message_id: 457,
+      caption: '  Buat invoice dari lampiran ini  ',
+      chat: { id: 789 },
+      from: { id: 111 },
+    },
+  },
+})[0].json;
+assert.strictEqual(captionMessage.raw_message, 'Buat invoice dari lampiran ini');
+assert.strictEqual(captionMessage.telegram_chat_id, '789');
+
+assert.throws(
+  () => runSnippet('n8n/code/normalize-telegram-message.js', {
+    body: {
+      message: {
+        message_id: 458,
+        chat: { id: 789 },
+        from: { id: 111 },
+      },
+    },
+  }),
+  /Telegram message text or caption is required/,
+);
+
+assert.throws(
+  () => runSnippet('n8n/code/normalize-telegram-message.js', {
+    text: '   ',
+    chat_id: 'chat-1',
+  }),
+  /Telegram message text or caption is required/,
+);
+
 const routedIntent = runSnippet('n8n/code/intent-prefilter.js', webhookMessage)[0].json;
 assert.strictEqual(routedIntent.intent, 'CREATE_INVOICE');
 assert.strictEqual(routedIntent.intent_source, 'deterministic_prefilter');
