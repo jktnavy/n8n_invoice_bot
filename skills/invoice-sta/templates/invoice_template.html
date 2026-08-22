@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Invoice - {{INVOICE_NUMBER}}</title>
+<style>
+  @page { size: A4; margin: 0; }
+  @media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
+
+  @font-face { font-family:'Inter'; font-weight:400; src:url({{FONT_400}}) format('woff2'); }
+  @font-face { font-family:'Inter'; font-weight:500; src:url({{FONT_500}}) format('woff2'); }
+  @font-face { font-family:'Inter'; font-weight:600; src:url({{FONT_600}}) format('woff2'); }
+  @font-face { font-family:'Inter'; font-weight:700; src:url({{FONT_700}}) format('woff2'); }
+  @font-face { font-family:'Inter'; font-weight:800; src:url({{FONT_800}}) format('woff2'); }
+
+  :root { --navy:#12344D; --blue:#176FA8; --red:#C83D46; --ink:#17212B; --muted:#536170; --line:#CCD7E0; --soft:#F2F7FA; --white:#FFFFFF; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { font-family:'Inter','DejaVu Sans',sans-serif; color:var(--ink); font-size:9.25pt; line-height:1.5; background:var(--white); }
+  body { padding:0; position:relative; }
+
+  /* ===== HEADER ===== */
+  .head { padding:7mm 16mm 0; }
+  .head table { width:100%; border-collapse:collapse; }
+  .co { width:58%; vertical-align:top; }
+  .logo { width:56mm; height:auto; }
+  .co-line { font-size:9.5pt; font-weight:600; margin-top:1mm; }
+  .co-meta { font-size:8.5pt; color:var(--muted); margin-top:0.6mm; }
+  .doc { width:42%; text-align:right; vertical-align:top; }
+  .doctitle { font-size:22pt; font-weight:700; letter-spacing:1.5px; color:var(--navy); line-height:1.05; }
+  .docno { font-size:10.5pt; font-weight:600; margin-top:0.8mm; }
+  .docdate { font-size:9pt; color:var(--muted); margin-top:0.5mm; }
+
+  /* ===== NAVY MANIFEST STRIP ===== */
+  .strip { background:var(--navy); color:#fff; margin:4mm 16mm 0; border-radius:1.5mm; padding:2.5mm 4mm; }
+  .strip table { width:100%; border-collapse:collapse; }
+  .strip td { vertical-align:top; }
+  .strip .lb { font-size:7pt; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:#9FB8C9; }
+  .strip .vl { font-size:9.5pt; font-weight:700; margin-top:0.4mm; }
+  .strip .right { text-align:right; }
+  .dot { display:inline-block; width:2.4mm; height:2.4mm; border-radius:0.6mm; margin-right:1.5mm; vertical-align:middle; }
+  .dot-lunas      { background:#2E9E5B; }
+  .dot-belum-lunas{ background:#E0A63A; }
+  .dot-dp         { background:#3B82C4; }
+  .dot-draft      { background:#8A97A3; }
+  .dot-dibatalkan { background:#C83D46; }
+
+  /* ===== HERO ROUTE ===== */
+  .hero { margin:3mm 16mm 0; padding:0 2mm; }
+  .hero .dates { width:100%; border-collapse:collapse; }
+  .hero .dd { vertical-align:top; width:20%; }
+  .hero .dt { font-size:8.5pt; font-weight:700; letter-spacing:1.4px; color:var(--blue); }
+  .hero .dc { font-size:12pt; font-weight:700; color:var(--ink); margin-top:0.6mm; line-height:1.25; }
+  .hero .arrow { vertical-align:middle; width:60%; text-align:center; color:var(--line); }
+  .hero .arrow .l { border-top:1.6px solid var(--line); }
+  .hero .d1 { text-align:left; } .hero .d2 { text-align:right; }
+  .hero .meta { margin-top:2mm; padding-top:1.5mm; border-top:1px solid var(--line); font-size:8.75pt; color:var(--muted); }
+
+  /* ===== MANIFEST TABLE ===== */
+  .items { width:calc(100% - 32mm); margin:4mm 16mm 0; border-collapse:collapse; }
+  .items th { background:var(--navy); color:#fff; font-size:8pt; font-weight:600; letter-spacing:0.8px; text-transform:uppercase; padding:2.2mm 2.5mm; text-align:left; }
+  .items td { padding:2.2mm 2.5mm; border-bottom:1px solid var(--line); vertical-align:top; line-height:1.35; }
+  .items tbody tr { break-inside:avoid; }
+  .items .num { text-align:right; font-variant-numeric:tabular-nums; }
+  .items .ctr { text-align:center; }
+  .items .ref { font-size:8pt; font-weight:600; color:var(--blue); }
+  .i-veh { font-weight:700; text-transform:uppercase; letter-spacing:0.4px; font-size:8.75pt; }
+  .i-rt { font-size:8.25pt; color:var(--muted); margin-top:0.4mm; }
+  .i-jml { font-weight:700; }
+
+  /* ===== NOTES + TOTAL ===== */
+  .nt { width:calc(100% - 32mm); margin:3mm 16mm 0; border-collapse:collapse; }
+  .nt td { vertical-align:top; }
+  .nleft { width:52%; padding-right:5mm; }
+  .note { font-size:8.75pt; margin-top:1.5mm; }
+  .note .mk { font-weight:700; color:var(--blue); margin-right:1.5mm; }
+  .note .minus { color:var(--red); }
+  .nright { width:48%; }
+  .total { background:var(--navy); border-radius:1.5mm; padding:3mm 5mm; text-align:right; }
+  .tot-label { font-size:8pt; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:#9FB8C9; }
+  .tot-num { font-size:19pt; font-weight:700; color:#fff; margin-top:1mm; }
+  .tot-sub { font-size:8.5pt; color:#9FB8C9; margin-top:1mm; }
+  .terbilang { font-size:8.75pt; font-style:italic; color:var(--muted); margin-top:2mm; text-align:right; }
+
+  /* ===== SIGNATURE ===== */
+  .sig { width:calc(100% - 32mm); margin:3mm 16mm 0; border-collapse:collapse; }
+  .sig td { vertical-align:bottom; }
+  .sleft { width:55%; font-size:8.5pt; color:var(--muted); }
+  .sright { width:45%; text-align:right; }
+  .scity { font-size:9pt; }
+  .sgreet { font-size:9pt; font-weight:600; margin-top:0.5mm; }
+  .stamp { width:26mm; height:auto; margin:0.6mm 0 0; display:inline-block; }
+  .sname { font-size:10pt; font-weight:700; margin-top:0.5mm; }
+  .spos { font-size:8.75pt; color:var(--muted); margin-top:0.2mm; }
+
+  /* ===== FOOTER ===== */
+  .foot { margin:1mm 16mm 0; border-top:1px solid var(--navy); padding:2mm 0 3mm; }
+  .f1 { font-size:8pt; font-weight:500; }
+  .f2 { font-size:8pt; color:var(--muted); }
+  .foot .right { text-align:right; }
+
+  /* ===== WATERMARK ===== */
+  .watermark {
+    position:absolute; top:34%; left:0; right:0; text-align:center;
+    font-size:64pt; font-weight:800; color:var(--navy); opacity:0.07;
+    letter-spacing:14px; z-index:0; pointer-events:none;
+  }
+</style>
+</head>
+<body>
+  {{WATERMARK}}
+
+  <!-- HEADER -->
+  <div class="head">
+    <table cellpadding="0" cellspacing="0">
+      <tr>
+        <td class="co">
+          <img class="logo" src="{{LOGO_DATA_URI}}" alt="STA Transport">
+          <div class="co-line">{{COMPANY_TAGLINE}}</div>
+          <div class="co-meta">{{COMPANY_ADDRESS}}</div>
+        </td>
+        <td class="doc">
+          <div class="doctitle">TRANSPORT INVOICE</div>
+          <div class="docno">{{INVOICE_NUMBER}}</div>
+          <div class="docdate">{{INVOICE_DATE}}</div>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- NAVY MANIFEST STRIP -->
+  <div class="strip">
+    <table cellpadding="0" cellspacing="0">
+      <tr>
+        <td><div class="lb">Manifest Perjalanan</div><div class="vl">{{TRIP_META}}</div></td>
+        <td><div class="lb">Periode</div><div class="vl">{{PERIODE}}</div></td>
+        <td class="right"><div class="lb">Status</div><div class="vl">{{STATUS_HTML}}</div></td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- HERO ROUTE -->
+  {{HERO}}
+
+  <!-- MANIFEST TABLE -->
+  <table class="items">
+    <thead><tr>
+      <th width="8%">Ref</th><th width="46%">Layanan / Rute</th><th width="10%" class="ctr">Unit</th><th width="19%" class="num">Harga/Unit</th><th width="17%" class="num">Jumlah</th>
+    </tr></thead>
+    <tbody>
+      {{ITEMS_ROWS}}
+    </tbody>
+  </table>
+
+  <!-- NOTES + TOTAL -->
+  <table class="nt" cellpadding="0" cellspacing="0">
+    <tr>
+      <td class="nleft">
+        <div class="sect">Ketentuan Harga</div>
+        {{NOTES_HTML}}
+      </td>
+      <td class="nright">
+        <div class="total">
+          <div class="tot-label">Total Tagihan</div>
+          <div class="tot-num">{{GRAND_TOTAL}}</div>
+          <div class="tot-sub">{{TOT_SUB}}</div>
+        </div>
+        <div class="terbilang">Terbilang: {{AMOUNT_IN_WORDS}}</div>
+      </td>
+    </tr>
+  </table>
+
+  <!-- SIGNATURE -->
+  <table class="sig" cellpadding="0" cellspacing="0">
+    <tr>
+      <td class="sleft">
+        {{SIGN_NOTE}}
+      </td>
+      <td class="sright">
+        <div class="scity">{{SIGNATORY_CITY}}, {{INVOICE_DATE}}</div>
+        <div class="sgreet">Hormat kami,</div>
+        <img class="stamp" src="{{STAMP_DATA_URI}}" alt="Cap &amp; Tanda Tangan">
+        <div class="sname">{{SIGNATORY_NAME}}</div>
+        <div class="spos">{{SIGNATORY_POSITION}}</div>
+      </td>
+    </tr>
+  </table>
+
+  <!-- FOOTER -->
+  <div class="foot">
+    <span class="f1">{{COMPANY_PHONE}} &nbsp;·&nbsp; {{COMPANY_WHATSAPP}}</span>
+    <span class="f2">&nbsp;&nbsp;|&nbsp;&nbsp; {{COMPANY_EMAIL}} &nbsp;·&nbsp; {{COMPANY_WEBSITE}}</span>
+  </div>
+</body>
+</html>

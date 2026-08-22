@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Design 2 — Classic Commercial Invoice</title>
+<style>
+  @page { size: A4; margin: 0; }
+  @media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
+
+  @font-face { font-family:'Inter'; font-weight:400; src:url({{FONT400}}) format('woff2'); }
+  @font-face { font-family:'Inter'; font-weight:500; src:url({{FONT500}}) format('woff2'); }
+  @font-face { font-family:'Inter'; font-weight:600; src:url({{FONT600}}) format('woff2'); }
+  @font-face { font-family:'Inter'; font-weight:700; src:url({{FONT700}}) format('woff2'); }
+  @font-face { font-family:'Inter'; font-weight:800; src:url({{FONT800}}) format('woff2'); }
+
+  :root { --navy:#12344D; --blue:#176FA8; --red:#C83D46; --ink:#17212B; --muted:#536170; --line:#CCD7E0; --soft:#F2F7FA; --white:#FFFFFF; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { font-family:'Inter','DejaVu Sans',sans-serif; color:var(--ink); font-size:9.25pt; line-height:1.5; background:var(--white); }
+  body { padding:12mm 16mm 10mm; }
+
+  .c { text-align:center; }
+
+  /* ===== MASTHEAD (terpusat) ===== */
+  .rule { border-top:2.6px solid var(--navy); margin-bottom:1.5mm; }
+  .rule2 { border-top:0.8px solid var(--navy); }
+  .mast { text-align:center; padding:2.5mm 0 2mm; }
+  .mast img { width:50mm; height:auto; }
+  .mname { font-size:13pt; font-weight:700; letter-spacing:2px; color:var(--navy); margin-top:1.5mm; }
+  .maddr { font-size:8.5pt; color:var(--muted); margin-top:0.8mm; }
+
+  .title { text-align:center; margin:2.5mm 0 2mm; }
+  .title .t { font-size:22pt; font-weight:700; letter-spacing:6px; color:var(--navy); }
+  .title .no { font-size:10.5pt; font-weight:600; color:var(--ink); margin-top:1mm; }
+  .title .dt { font-size:9pt; color:var(--muted); margin-top:0.4mm; }
+
+  /* ===== META BLOCK ===== */
+  .meta { width:100%; border:1px solid var(--line); border-collapse:collapse; margin-bottom:5mm; }
+  .meta td { padding:2mm 3mm; vertical-align:top; }
+  .meta .l { border-right:1px solid var(--line); }
+  .sect { font-size:8pt; font-weight:700; letter-spacing:0.9px; text-transform:uppercase; color:var(--navy); }
+  .cust { font-size:13pt; font-weight:700; color:var(--ink); margin-top:1mm; }
+  .meta .pay-num { font-size:15pt; font-weight:700; color:var(--ink); letter-spacing:1.2px; margin-top:1mm; }
+  .meta .m2 { font-size:8.5pt; color:var(--muted); margin-top:0.5mm; }
+
+  /* ===== TRIP LINE ===== */
+  .trip { border:1px solid var(--line); padding:2mm 3mm; margin-bottom:4mm; }
+  .trip .row { font-size:9pt; }
+  .trip .hl { font-weight:700; color:var(--navy); }
+  .trip .sub { font-size:8.5pt; color:var(--muted); margin-top:0.5mm; }
+
+  /* ===== LEDGER TABLE ===== */
+  table.items { width:100%; border-collapse:collapse; margin-bottom:5mm; }
+  .items th {
+    background:var(--navy); color:#fff; font-size:8pt; font-weight:600; letter-spacing:0.8px; text-transform:uppercase;
+    padding:2.5mm 2.5mm; text-align:left; border:0.8px solid var(--navy);
+  }
+  .items td { padding:3mm 2.5mm; border:0.8px solid var(--line); vertical-align:top; }
+  .items tr { break-inside:avoid; }
+  .items .num { text-align:right; font-variant-numeric:tabular-nums; }
+  .items .ctr { text-align:center; }
+  .i-veh { font-weight:700; color:var(--ink); text-transform:uppercase; letter-spacing:0.4px; font-size:9pt; }
+  .i-rt { font-size:8.5pt; color:var(--muted); margin-top:0.5mm; }
+  .i-jml { font-weight:700; }
+
+  /* ===== TOTAL ===== */
+  .tot { width:100%; margin-bottom:4mm; }
+  .tot td { vertical-align:top; }
+  .tleft { width:50%; }
+  .terbilang { font-size:8.75pt; font-style:italic; color:var(--ink); padding-top:1mm; border-top:2.6px solid var(--navy); }
+  .tright { width:50%; }
+  table.sum { width:100%; border-collapse:collapse; }
+  .sum td { padding:1.2mm 0; font-size:9pt; }
+  .sum td:last-child { text-align:right; font-weight:600; font-variant-numeric:tabular-nums; }
+  .sum tr.gt td { border-top:2.6px solid var(--navy); }
+  .sum tr.gt td:first-child { font-size:8.5pt; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:var(--navy); }
+  .sum tr.gt td:last-child { font-size:17pt; font-weight:700; color:var(--navy); }
+  .sum .subline { font-size:8.5pt; color:var(--muted); }
+
+  /* ===== NOTES ===== */
+  .notes { border:1px solid var(--line); padding:2.5mm 3mm; margin-bottom:4mm; }
+  .notes .sect { margin-bottom:1.5mm; }
+  .notes .n { font-size:8.75pt; margin-top:1mm; }
+
+  /* ===== SIGNATURE ===== */
+  .sig { width:100%; margin-top:1mm; }
+  .sig td { vertical-align:bottom; }
+  .sleft { width:55%; font-size:8.5pt; color:var(--muted); }
+  .sright { width:45%; text-align:right; }
+  .scity { font-size:9pt; }
+  .sgreet { font-size:9pt; font-weight:600; margin-top:0.5mm; }
+  .stamp { width:30mm; height:auto; margin:1mm 0 0; display:inline-block; }
+  .sname { font-size:10pt; font-weight:700; margin-top:0.8mm; }
+  .spos { font-size:8.75pt; color:var(--muted); }
+
+  /* ===== FOOTER ===== */
+  .foot { margin-top:3mm; text-align:center; }
+  .frule { border-top:0.8px solid var(--navy); padding-top:2.5mm; }
+  .f1 { font-size:8.5pt; font-weight:600; color:var(--ink); }
+  .f2 { font-size:8.5pt; color:var(--muted); margin-top:0.6mm; }
+</style>
+</head>
+<body>
+
+  <!-- MASTHEAD -->
+  <div class="rule"></div>
+  <div class="mast">
+    <img src="{{LOGO}}" alt="STA Transport">
+    <div class="mname">STA TRANSPORT</div>
+    <div class="maddr">Jl. Akses Tol Cimanggis No. 73, Leuwinanggung, Tapos, Depok 16456 &nbsp;·&nbsp; www.statransport.co.id</div>
+  </div>
+  <div class="rule2"></div>
+
+  <!-- TITLE -->
+  <div class="title">
+    <div class="t">INVOICE</div>
+    <div class="no">INV-0001/STA/VIII/2026</div>
+    <div class="dt">14 Agustus 2026 &nbsp;·&nbsp; Status: <strong>LUNAS</strong></div>
+  </div>
+
+  <!-- META BLOCK -->
+  <table class="meta">
+    <tr>
+      <td class="l" width="56%">
+        <div class="sect">Ditagihkan Kepada</div>
+        <div class="cust">PT Nusa Horizon Wisata</div>
+      </td>
+      <td width="44%">
+        <div class="sect">Informasi Pembayaran</div>
+        <div class="pay-num">406 061 5352</div>
+        <div class="m2">BCA &nbsp;·&nbsp; a.n. Suhendi</div>
+      </td>
+    </tr>
+  </table>
+
+  <!-- TRIP -->
+  <div class="trip">
+    <div class="row"><span class="hl">2 Unit Medium Bus</span> &nbsp;—&nbsp; 15 s/d 17 Agustus 2026 &nbsp;·&nbsp; Durasi 3 hari</div>
+    <div class="sub">Berangkat: Harapan Indah, Bekasi &nbsp;→&nbsp; Tujuan: Cisarua, Puncak &nbsp;·&nbsp; Kembali: Cisarua, Puncak → Jakarta</div>
+  </div>
+
+  <!-- LEDGER -->
+  <table class="items">
+    <thead><tr>
+      <th width="6%">No</th><th width="50%">Keterangan</th><th width="17%" class="num">Harga Satuan</th><th width="10%" class="ctr">Qty</th><th width="17%" class="num">Jumlah</th>
+    </tr></thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td><div class="i-veh">Medium Bus</div><div class="i-rt">Harapan Indah, Bekasi → Cisarua, Puncak, 15 Agustus 2026</div></td>
+        <td class="num">Rp2.800.000</td><td class="ctr">2</td><td class="num i-jml">Rp5.600.000</td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td><div class="i-veh">Medium Bus</div><div class="i-rt">Cisarua, Puncak → Jakarta, 17 Agustus 2026</div></td>
+        <td class="num">Rp2.600.000</td><td class="ctr">2</td><td class="num i-jml">Rp5.200.000</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- TOTAL -->
+  <table class="tot">
+    <tr>
+      <td class="tleft">
+        <div class="terbilang">Terbilang: Sepuluh juta delapan ratus ribu rupiah.</div>
+      </td>
+      <td class="tright">
+        <table class="sum">
+          <tr><td class="subline">Subtotal</td><td>Rp10.800.000</td></tr>
+          <tr class="gt"><td>Total Tagihan</td><td>Rp10.800.000</td></tr>
+          <tr><td class="subline">Pelunasan 100% · LUNAS</td><td></td></tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <!-- NOTES -->
+  <div class="notes">
+    <div class="sect">Ketentuan</div>
+    <div class="n">• Termasuk unit kendaraan, pengemudi, dan BBM.</div>
+    <div class="n">• Tidak termasuk tol, parkir, dan tips pengemudi.</div>
+  </div>
+
+  <!-- SIGNATURE -->
+  <table class="sig">
+    <tr>
+      <td class="sleft">
+        Invoice ini sah sebagai bukti penagihan.<br>
+        Bukti transfer mohon dilampirkan saat pembayaran.
+      </td>
+      <td class="sright">
+        <div class="scity">Jakarta, 14 Agustus 2026</div>
+        <div class="sgreet">Hormat kami,</div>
+        <img class="stamp" src="{{STAMP}}" alt="Cap &amp; Tanda Tangan">
+        <div class="sname">Suhendi</div>
+        <div class="spos">Marketing Executive</div>
+      </td>
+    </tr>
+  </table>
+
+  <!-- FOOTER -->
+  <div class="foot">
+    <div class="frule"></div>
+    <div class="f1">0811-800-8613 &nbsp;·&nbsp; 0812-840-21376</div>
+    <div class="f2">statransdotcom@gmail.com &nbsp;·&nbsp; www.statransport.co.id</div>
+  </div>
+</body>
+</html>
