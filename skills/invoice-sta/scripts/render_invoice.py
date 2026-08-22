@@ -26,6 +26,7 @@ Input JSON (struktur baru):
 Nomor invoice (dari DB): INV-0001/STA/VIII/2026 (seq 4 digit / STA / bulan Romawi / tahun).
 """
 import base64
+import hashlib
 import json
 import os
 import re
@@ -434,7 +435,8 @@ def _status_to_db(status: str) -> str:
     return mapping.get(status, 'sent')
 
 
-def save_mysql(d: dict, status: str, pdf_path: Path) -> str:
+def save_mysql(d: dict, status: str, pdf_path: Path):
+    """Insert invoice + items. Return (invoice_number, inv_id)."""
     conn = _db_conn()
     try:
         with conn.cursor() as cur:
@@ -447,15 +449,18 @@ def save_mysql(d: dict, status: str, pdf_path: Path) -> str:
                    (invoice_number, customer_name, invoice_date, payment_type,
                     dp, sub_total, discount_total, grand_total, terbilang,
                     included_text, excluded_text, status, pdf_path,
-                    source_chat, raw_request)
-                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                    source_chat, raw_request, request_fingerprint,
+                    content_fingerprint, delivery_status)
+                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
                 (number, d['customer']['name'], d['invoice_date'],
                  d.get('payment_type'),
                  1 if ('DP' in str(d.get('payment_type') or '').upper()
                        or (d['paid_amount'] > 0 and d['paid_amount'] < d['grand_total'])) else 0,
                  d['subtotal'], d['discount'], d['grand_total'], d['amount_in_words'],
                  included, excluded, _status_to_db(status), str(pdf_path),
-                 d.get('source_chat'), json.dumps(d, ensure_ascii=False)))
+                 d.get('source_chat'), json.dumps(d, ensure_ascii=False),
+                 d.get('request_fingerprint'), d.get('content_fingerprint'),
+                 'pending'))
             inv_id = cur.lastrowid
             for i, it in enumerate(d['items'], 1):
                 cur.execute(
@@ -469,7 +474,67 @@ def save_mysql(d: dict, status: str, pdf_path: Path) -> str:
                      'Unit', None, None, it.get('unit_price', 0),
                      it.get('subtotal', 0)))
             conn.commit()
-            return number
+            return number, inv_id
+    finally:
+        conn.close()
+
+
+def update_delivery_status(inv_id, delivery_status: str, message_id=None,
+                           chat_id=None, error=None) -> None:
+    conn = _db_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE invoices SET delivery_status=%s, telegram_message_id=%s, "
+                "telegram_chat_id=%s, delivery_error=%s WHERE id=%s",
+                (delivery_status, message_id, chat_id, error, inv_id))
+            conn.commit()
+    finally:
+        conn.close()
+
+
+def request_fingerprint(d: dict) -> str:
+    """Fingerprint unik utk deteksi duplikat request (idempotency)."""
+    parts = [
+        str((d.get('customer') or {}).get('name', '')),
+        str((d.get('trip_summary') or {}).get('departure_date', '')),
+        str((d.get('trip_summary') or {}).get('return_date', '')),
+        str((d.get('trip_summary') or {}).get('vehicle_type', '')),
+        str((d.get('trip_summary') or {}).get('total_units', '')),
+        str(d.get('subtotal', 0)),
+        str(d.get('grand_total', 0)),
+        str(d.get('source_chat', '')),
+    ]
+    return hashlib.sha256('|'.join(parts).encode('utf-8')).hexdigest()
+
+
+def content_fingerprint(d: dict) -> str:
+    """Fingerprint isi invoice (tanpa source_chat) — fallback deteksi duplikat
+    jika agent lupa mengisi source_chat."""
+    parts = [
+        str((d.get('customer') or {}).get('name', '')),
+        str((d.get('trip_summary') or {}).get('departure_date', '')),
+        str((d.get('trip_summary') or {}).get('return_date', '')),
+        str((d.get('trip_summary') or {}).get('vehicle_type', '')),
+        str((d.get('trip_summary') or {}).get('total_units', '')),
+        str(d.get('subtotal', 0)),
+        str(d.get('grand_total', 0)),
+    ]
+    return hashlib.sha256('|'.join(parts).encode('utf-8')).hexdigest()
+
+
+def find_existing_by_fingerprint(fp: str, cfp: str):
+    """Cek apakah request yang sama sudah pernah dibuat (full atau content).
+    Return (id, invoice_number) atau None."""
+    conn = _db_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id, invoice_number FROM invoices "
+                "WHERE (request_fingerprint=%s OR content_fingerprint=%s) "
+                "AND invoice_number IS NOT NULL "
+                "ORDER BY id DESC LIMIT 1", (fp, cfp))
+            return cur.fetchone()
     finally:
         conn.close()
 
@@ -490,16 +555,22 @@ def _load_env_file():
             os.environ.setdefault(k.strip(), v.strip())
 
 
-def send_telegram_document(chat_id: str, pdf_path: Path) -> bool:
-    """Kirim PDF langsung ke chat Telegram via Bot API (tidak bergantung pada LLM)."""
+def send_telegram_document(chat_id: str, pdf_path: Path) -> dict:
+    """Kirim PDF ke chat Telegram via Bot API.
+
+    Return dict: {"ok": bool, "chat_id": str, "message_id": int|None,
+                  "description": str}
+    """
     _load_env_file()
+    result = {'ok': False, 'chat_id': str(chat_id), 'message_id': None,
+              'description': ''}
     token = os.environ.get('TELEGRAM_BOT_TOKEN', '').strip()
     if not token:
-        print('⚠️ TELEGRAM_BOT_TOKEN kosong — PDF tidak dikirim otomatis')
-        return False
+        result['description'] = 'TELEGRAM_BOT_TOKEN kosong'
+        return result
     if not re.match(r'^-?\d+$', str(chat_id).strip()):
-        print(f'⚠️ chat_id tidak numerik ({chat_id!r}) — PDF tidak dikirim otomatis')
-        return False
+        result['description'] = f'chat_id tidak numerik: {chat_id!r}'
+        return result
     boundary = '----HermesBoundary' + uuid.uuid4().hex
     fields = [('chat_id', str(chat_id).strip())]
     body = b''
@@ -521,13 +592,14 @@ def send_telegram_document(chat_id: str, pdf_path: Path) -> bool:
         with urllib.request.urlopen(req, timeout=60) as resp:
             data = json.loads(resp.read().decode())
             if data.get('ok'):
-                print(f'✅ PDF terkirim ke Telegram (chat={chat_id})')
-                return True
-            print(f'⚠️ sendDocument gagal: {data.get("description")}')
-            return False
+                result['ok'] = True
+                result['message_id'] = (data.get('result') or {}).get('message_id')
+                return result
+            result['description'] = data.get('description') or 'sendDocument gagal'
+            return result
     except Exception as exc:
-        print(f'⚠️ Gagal kirim Telegram: {exc}')
-        return False
+        result['description'] = f'exception: {exc}'
+        return result
 
 
 def main() -> None:
@@ -541,9 +613,60 @@ def main() -> None:
         i = sys.argv.index('--chat')
         if i + 1 < len(sys.argv):
             chat_arg = sys.argv[i + 1]
-    data = normalize(json.load(open(sys.argv[1])))
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
+    data = normalize(json.load(open(sys.argv[1])))
+    request_id = str(data.get('request_id') or '').strip() or uuid.uuid4().hex[:12]
+    print(f'REQUEST_ID={request_id}')
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    _load_env_file()
+
+    def _resolve_chat():
+        chat = chat_arg or str(data.get('source_chat') or '').strip()
+        if not re.match(r'^-?\d+$', chat):
+            m = re.search(r'-?\d+', chat)
+            chat = m.group(0) if m else ''
+        if not chat:
+            allowed = os.environ.get('TELEGRAM_GROUP_ALLOWED_CHATS', '').strip()
+            if allowed:
+                chat = allowed.split(',')[0].strip()
+        return chat
+
+    # --- Idempotency: deteksi duplikat request (jangan buat nomor baru) ---
+    data['request_fingerprint'] = request_fingerprint(data)
+    data['content_fingerprint'] = content_fingerprint(data)
+    print(f'FINGERPRINT={data["request_fingerprint"]}')
+
+    if not pdf_only:
+        existing = find_existing_by_fingerprint(data['request_fingerprint'],
+                                                data['content_fingerprint'])
+        if existing:
+            exist_id, exist_number = existing
+            print('POTENTIAL_DUPLICATE=true')
+            print(f'EXISTING_INVOICE={exist_number}')
+            pdf_path = OUTPUT_DIR / f"{exist_number.replace('/', '-')}.pdf"
+            if not pdf_path.exists():
+                print('EXISTING_PDF=missing')
+                print('INVOICE_RESULT=FAILED (invoice duplikat tapi PDF lama tidak ada)')
+                sys.exit(20)
+            chat = _resolve_chat()
+            result = send_telegram_document(chat, pdf_path)
+            print(f"TELEGRAM_SEND_OK={'true' if result['ok'] else 'false'}")
+            print(f"TELEGRAM_CHAT_ID={result['chat_id']}")
+            if result['message_id'] is not None:
+                print(f"TELEGRAM_MESSAGE_ID={result['message_id']}")
+            if result.get('description'):
+                print(f"TELEGRAM_ERROR={result['description']}")
+            update_delivery_status(exist_id,
+                                   'sent' if result['ok'] else 'failed',
+                                   result['message_id'], result['chat_id'],
+                                   None if result['ok'] else result['description'])
+            if result['ok']:
+                print('INVOICE_RESULT=OK (delivery ulang invoice yang sama)')
+                sys.exit(0)
+            print('INVOICE_RESULT=FAILED (Telegram delivery gagal pada retry)')
+            sys.exit(20)
+
+    # --- Invoice baru ---
     if not data['invoice_number'] and not pdf_only:
         conn = _db_conn()
         try:
@@ -564,29 +687,42 @@ def main() -> None:
     if pdf_only:
         print('PDF (tanpa MySQL):')
         print(pdf_path)
-        return
+        print('PDF_CREATED=true')
+        sys.exit(0)
 
-    saved_number = save_mysql(data, status, pdf_path)
+    saved_number, inv_id = save_mysql(data, status, pdf_path)
     print('Invoice tersimpan:')
     print(pdf_path)
     print(f'Nomor: {saved_number}')
+    print(f'RECORD_ID={inv_id}')
 
-    # Kirim PDF langsung ke Telegram (robust — tidak butuh [[as_document]] dari LLM)
-    _load_env_file()
-    chat = chat_arg or str(data.get('source_chat') or '').strip()
+    # --- Kirim PDF langsung ke Telegram (error handling ketat) ---
+    chat = _resolve_chat()
     if not re.match(r'^-?\d+$', chat):
-        m = re.search(r'-?\d+', chat)
-        chat = m.group(0) if m else ''
-    if not chat:
-        # Fallback: grup utama dari env (agar PDF selalu terkirim walau agent
-        # lupa --chat / source_chat tidak numerik)
-        allowed = os.environ.get('TELEGRAM_GROUP_ALLOWED_CHATS', '').strip()
-        if allowed:
-            chat = allowed.split(',')[0].strip()
-    if chat and re.match(r'^-?\d+$', chat):
-        send_telegram_document(chat, pdf_path)
-    else:
         print('⚠️ Tidak ada chat id — PDF tidak dikirim otomatis (gunakan --chat <id>)')
+        update_delivery_status(inv_id, 'failed', None, None,
+                               'chat id tidak ditemukan')
+        print('INVOICE_RESULT=FAILED (chat id tidak ditemukan)')
+        sys.exit(20)
+
+    result = send_telegram_document(chat, pdf_path)
+    print(f"TELEGRAM_SEND_OK={'true' if result['ok'] else 'false'}")
+    print(f"TELEGRAM_CHAT_ID={result['chat_id']}")
+    if result['message_id'] is not None:
+        print(f"TELEGRAM_MESSAGE_ID={result['message_id']}")
+    if result.get('description'):
+        print(f"TELEGRAM_ERROR={result['description']}")
+
+    if result['ok']:
+        update_delivery_status(inv_id, 'sent', result['message_id'],
+                               result['chat_id'], None)
+        print('INVOICE_RESULT=OK')
+        sys.exit(0)
+
+    update_delivery_status(inv_id, 'failed', None, result['chat_id'],
+                           result['description'])
+    print('INVOICE_RESULT=FAILED (Telegram delivery gagal)')
+    sys.exit(20)
 
 
 if __name__ == '__main__':

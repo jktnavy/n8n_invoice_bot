@@ -28,14 +28,21 @@ CREATE TABLE invoices (
   excluded_text   TEXT          NULL,
   status          ENUM('draft','approved','sent','paid','void')
                   NOT NULL DEFAULT 'draft',
+  delivery_status VARCHAR(20)  NOT NULL DEFAULT 'pending',
+  telegram_message_id BIGINT   NULL,
+  telegram_chat_id VARCHAR(50) NULL,
+  delivery_error   VARCHAR(500) NULL,
   pdf_path        VARCHAR(500)  NULL,
   source_chat     VARCHAR(255)  NULL,
   raw_request     TEXT          NULL,
+  request_fingerprint VARCHAR(64) NULL,
+  content_fingerprint VARCHAR(64) NULL,
   created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
                   ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_invoices_date (invoice_date),
-  INDEX idx_invoices_customer (customer_name)
+  INDEX idx_invoices_customer (customer_name),
+  INDEX idx_invoices_fingerprint (request_fingerprint)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ------------------------------------------------------------

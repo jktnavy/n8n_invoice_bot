@@ -172,28 +172,42 @@ revisi/preview invoice yang sedang dibuat.
    tampilkan preview baru, minta persetujuan lagi. Jangan buat invoice baru
    hanya karena koreksi kecil (AGENTS.md §11).
 
-6. Setelah **disetujui**, tulis JSON ke file sementara lalu jalankan dengan
-   `--chat <ID_NUMERIK_CHAT>` (WAJIB — ambil dari konteks gateway; contoh grup
-   `-5483961981`, DM `1301178833`):
+6. Setelah **disetujui**, tulis JSON ke file sementara (sertakan `request_id` random
+   dan `source_chat` = ID numerik chat dari konteks gateway) lalu jalankan dengan
+   `--chat <ID_NUMERIK_CHAT>` (WAJIB; contoh grup `-5483961981`, DM `1301178833`):
 
    ```
    /home/invoicebot/.hermes/venvs/invoice-sta/bin/python scripts/render_invoice.py /tmp/invoice_draft.json --chat -5483961981
    ```
 
    Script akan: menentukan nomor invoice dari DB (`INV-0001/STA/VIII/2026`), render
-   PDF (merge cap+ttd, logo, template), simpan ke MySQL, LALU **mengirim PDF
-   langsung ke chat** lewat Bot API — TANPA butuh directive dari LLM.
+   PDF, simpan ke MySQL, LALU **mengirim PDF langsung ke chat** lewat Bot API.
+   Script mencetak status yang HARUS diperiksa:
+   - `TELEGRAM_SEND_OK=true/false`
+   - `TELEGRAM_CHAT_ID=...`
+   - `TELEGRAM_MESSAGE_ID=<angka>` (hanya jika ok)
+   - `INVOICE_RESULT=OK` atau `INVOICE_RESULT=FAILED (...)`
+   - exit code: `0` = sukses penuh, `20` = Telegram delivery gagal.
 
-7. **Balas konfirmasi teks saja** — PDF SUDAH terkirim otomatis oleh script:
+7. **Balas konfirmasi HANYA berdasarkan bukti output script:**
 
-   ```
-   Invoice INV-0001/STA/VIII/2026 sudah dibuat dan PDF-nya terkirim.
-   ```
+   - Jika output mengandung `TELEGRAM_SEND_OK=true` DAN `TELEGRAM_MESSAGE_ID=<angka>`
+     DAN `INVOICE_RESULT=OK` (exit 0), balas:
+     ```
+     Invoice INV-0001/STA/VIII/2026 berhasil dibuat dan PDF sudah terkirim.
+     ```
+   - Jika `INVOICE_RESULT=FAILED` atau `TELEGRAM_SEND_OK=false`, balas dengan JUJUR:
+     ```
+     Invoice berhasil dibuat, tetapi pengiriman PDF ke Telegram GAGAL.
+     ```
+   - Jika script memunculkan `POTENTIAL_DUPLICATE=true`, BERITAHU user bahwa invoice
+     yang sama sudah ada (mis. INV-0001) dan tidak dibuat nomor baru.
 
-   ⚠️ JANGAN menulis path file, JANGAN menambahkan `[[as_document]]`, dan JANGAN
-   melampirkan file apa pun — nanti PDF terkirim dua kali.
+   ⚠️ DILARANG mengarang status pengiriman. JANGAN menyatakan "PDF terkirim" tanpa
+   bukti `TELEGRAM_MESSAGE_ID`. JANGAN menulis path file atau `[[as_document]]`.
 
-8. Konfirmasi: nomor invoice, total, dan bahwa record tersimpan di MySQL.
+8. Konfirmasi: nomor invoice, total, delivery status, dan bahwa record tersimpan
+   di MySQL (kolom `delivery_status` = sent/failed).
 
 ## Format Input yang Harus Dikenali
 
