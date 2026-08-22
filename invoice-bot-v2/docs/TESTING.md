@@ -87,3 +87,13 @@ Offline acceptance simulator:
 PYTHONPATH=services/invoice-core:services/llm-parser:services/workflow-sim \
   python3 -m unittest discover -s services/workflow-sim/tests -v
 ```
+
+Acceptance JSON evidence:
+
+```bash
+PYTHONPATH=services/invoice-core:services/llm-parser:services/workflow-sim \
+  python3 scripts/run-acceptance-sim.py
+```
+
+The JSON runner summarizes scenario A-E outcomes, invoice/delivery counts,
+sequence usage, and audit event counts for CI logs or pre-live review.

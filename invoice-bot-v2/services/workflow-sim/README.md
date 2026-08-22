@@ -13,5 +13,14 @@ It verifies deterministic behavior without external dependencies:
 - delivery failure separated from invoice creation
 - resend reusing the same invoice and PDF path
 
-It is not the production orchestrator. Production orchestration remains n8n.
+Machine-readable acceptance evidence:
 
+```bash
+PYTHONPATH=services/invoice-core:services/llm-parser:services/workflow-sim \
+  python3 scripts/run-acceptance-sim.py
+```
+
+The runner executes the core scenario set and emits a JSON summary suitable for
+CI logs or handoff notes before live Telegram acceptance.
+
+It is not the production orchestrator. Production orchestration remains n8n.
