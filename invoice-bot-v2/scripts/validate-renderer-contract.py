@@ -149,6 +149,15 @@ def validate_n8n_telegram_document_contract() -> list[str]:
     ]:
         if required_fragment not in text:
             failures.append(f"{PREPARE_TELEGRAM_SNIPPET.relative_to(ROOT_DIR)} missing {required_fragment}")
+    delivery_text = (ROOT_DIR / "n8n" / "code" / "telegram-delivery-result.js").read_text()
+    for required_fragment in [
+        "response.ok === true",
+        "response.result.message_id",
+        "http_status",
+        "provider_error_code",
+    ]:
+        if required_fragment not in delivery_text:
+            failures.append(f"n8n/code/telegram-delivery-result.js missing {required_fragment}")
     return failures
 
 

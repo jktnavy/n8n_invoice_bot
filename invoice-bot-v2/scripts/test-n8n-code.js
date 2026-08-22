@@ -185,10 +185,29 @@ assert.strictEqual(resendDocument.invoice_id, telegramDocument.invoice_id);
 assert.strictEqual(resendDocument.resend_requested, true);
 
 const delivery = runSnippet('n8n/code/telegram-delivery-result.js', {
+  http_status: 200,
   telegram_response: { ok: true, result: { message_id: 12345 } },
 })[0].json;
 assert.strictEqual(delivery.delivery_status, 'sent');
 assert.strictEqual(delivery.provider_message_id, '12345');
+assert.strictEqual(delivery.http_status, 200);
+
+const failedDelivery = runSnippet('n8n/code/telegram-delivery-result.js', {
+  http_status: 400,
+  telegram_response: { ok: false, error_code: 400, description: 'Bad Request: chat not found' },
+})[0].json;
+assert.strictEqual(failedDelivery.delivery_status, 'failed');
+assert.strictEqual(failedDelivery.provider_message_id, null);
+assert.strictEqual(failedDelivery.http_status, 400);
+assert.strictEqual(failedDelivery.provider_error_code, '400');
+assert.match(failedDelivery.provider_error_message, /chat not found/);
+
+const missingMessageIdDelivery = runSnippet('n8n/code/telegram-delivery-result.js', {
+  http_status: 200,
+  telegram_response: { ok: true, result: {} },
+})[0].json;
+assert.strictEqual(missingMessageIdDelivery.delivery_status, 'failed');
+assert.strictEqual(missingMessageIdDelivery.provider_message_id, null);
 
 const sanitizedError = runSnippet('n8n/code/sanitize-error.js', {
   execution: { id: 'exec-1' },

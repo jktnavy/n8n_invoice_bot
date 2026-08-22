@@ -41,6 +41,20 @@ class TelegramClientTest(unittest.TestCase):
         self.assertEqual(result.provider_error_code, "400")
         self.assertEqual(result.provider_error_message, "Bad Request: chat not found")
 
+    def test_send_document_requires_provider_message_id(self):
+        def transport(url, body, headers):
+            return 200, {"ok": True, "result": {}}
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            pdf = Path(tmpdir) / "invoice.pdf"
+            pdf.write_bytes(b"%PDF fake")
+            result = TelegramClient("token-secret", transport=transport).send_document("chat-1", pdf)
+
+        self.assertFalse(result.ok)
+        self.assertEqual(result.delivery_status, "failed")
+        self.assertIsNone(result.provider_message_id)
+        self.assertEqual(result.provider_error_message, "Telegram request failed")
+
     def test_missing_chat_id_is_rejected_before_transport(self):
         called = False
 

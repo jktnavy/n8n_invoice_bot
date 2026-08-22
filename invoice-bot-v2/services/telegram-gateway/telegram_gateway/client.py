@@ -63,12 +63,18 @@ class TelegramClient:
             fields["caption"] = caption
         body = _multipart_body(fields, "document", path, boundary)
         headers = {"Content-Type": f"multipart/form-data; boundary={boundary}"}
-        return self._request_json("sendDocument", body, headers)
+        return self._request_json("sendDocument", body, headers, require_message_id=True)
 
-    def _request_json(self, method: str, body: bytes | None = None, headers: dict[str, str] | None = None) -> TelegramResult:
+    def _request_json(
+        self,
+        method: str,
+        body: bytes | None = None,
+        headers: dict[str, str] | None = None,
+        require_message_id: bool = False,
+    ) -> TelegramResult:
         url = f"{self.base_url}/bot{self.bot_token}/{method}"
         http_status, response_body = self.transport(url, body, headers or {})
-        return _telegram_result(http_status, response_body)
+        return _telegram_result(http_status, response_body, require_message_id=require_message_id)
 
     def _default_transport(self, url: str, body: bytes | None, headers: dict[str, str]) -> tuple[int, dict]:
         try:
@@ -84,16 +90,17 @@ class TelegramClient:
             return exc.code, parsed
 
 
-def _telegram_result(http_status: int | None, response: dict) -> TelegramResult:
+def _telegram_result(http_status: int | None, response: dict, require_message_id: bool = False) -> TelegramResult:
     ok = response.get("ok") is True
     result = response.get("result") if isinstance(response.get("result"), dict) else {}
     message_id = result.get("message_id")
+    effective_ok = ok and (message_id is not None if require_message_id else response.get("result") is not None)
     return TelegramResult(
-        ok=ok and (message_id is not None or response.get("result") is True or isinstance(response.get("result"), dict)),
+        ok=effective_ok,
         http_status=http_status,
         provider_message_id=str(message_id) if message_id is not None else None,
-        provider_error_code=None if ok else str(response.get("error_code", "")) or None,
-        provider_error_message=None if ok else response.get("description", "Telegram request failed"),
+        provider_error_code=None if effective_ok else str(response.get("error_code", "")) or None,
+        provider_error_message=None if effective_ok else response.get("description", "Telegram request failed"),
         provider_response=response,
     )
 

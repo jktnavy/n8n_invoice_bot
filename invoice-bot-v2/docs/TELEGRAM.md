@@ -39,6 +39,7 @@ The dependency-free Telegram gateway client in `services/telegram-gateway` maps 
 
 ```text
 delivery_status
+http_status
 provider_message_id
 provider_error_code
 provider_error_message

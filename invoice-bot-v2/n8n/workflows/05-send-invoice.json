@@ -41,7 +41,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const response = $json.telegram_response || $json;\nconst ok = response.ok === true && response.result && response.result.message_id;\n\nreturn [\n  {\n    json: {\n      ...$json,\n      delivery_status: ok ? 'sent' : 'failed',\n      provider_message_id: ok ? String(response.result.message_id) : null,\n      provider_error_code: ok ? null : String(response.error_code || ''),\n      provider_error_message: ok ? null : String(response.description || 'Telegram delivery failed'),\n      provider_response: response,\n    },\n  },\n];\n"
+        "jsCode": "const response = $json.telegram_response || $json;\nconst ok = response.ok === true && response.result && response.result.message_id;\nconst errorCode = response.error_code ?? $json.http_status ?? null;\n\nreturn [\n  {\n    json: {\n      ...$json,\n      delivery_status: ok ? 'sent' : 'failed',\n      provider_message_id: ok ? String(response.result.message_id) : null,\n      http_status: $json.http_status ?? response.http_status ?? null,\n      provider_error_code: ok || errorCode === null ? null : String(errorCode),\n      provider_error_message: ok ? null : String(response.description || 'Telegram delivery failed'),\n      provider_response: response,\n    },\n  },\n];\n"
       },
       "id": "parse-telegram-delivery-result",
       "name": "Parse Telegram Delivery Result",
