@@ -7,6 +7,10 @@ CREATE_MESSAGE = (
     "Buat invoice PT Nusa Horizon, 2 medium tanggal 15 Harapan Indah ke Puncak "
     "2,8 juta per unit, tanggal 17 Puncak Jakarta 2,6 juta. Lunas tanpa DP."
 )
+SECOND_CREATE_MESSAGE = (
+    "Buat invoice PT Nusa, 2 medium tanggal 15 Harapan Indah ke Puncak "
+    "2,8 juta per unit, tanggal 17 Puncak Jakarta 2,6 juta. Lunas tanpa DP."
+)
 
 
 class AcceptanceSimulatorTest(unittest.TestCase):
@@ -82,7 +86,24 @@ class AcceptanceSimulatorTest(unittest.TestCase):
         self.assertEqual(result["type"], "NO_ACTIVE_DRAFT")
         self.assertEqual(len(bot.store.invoices), 0)
 
+    def test_sequence_increments_only_after_distinct_draft_approval(self):
+        bot = InvoiceBotSimulator()
+
+        first_preview = bot.handle_message("chat-1", "user-1", CREATE_MESSAGE)
+        self.assertEqual(first_preview["type"], "PREVIEW")
+        self.assertEqual(bot.store.sequence_last_number, 0)
+        first = bot.handle_message("chat-1", "user-1", "setuju")
+        self.assertEqual(first["invoice_number"], "INV-0001/STA/VIII/2026")
+        self.assertEqual(bot.store.sequence_last_number, 1)
+
+        second_preview = bot.handle_message("chat-2", "user-2", SECOND_CREATE_MESSAGE)
+        self.assertEqual(second_preview["type"], "PREVIEW")
+        self.assertEqual(bot.store.sequence_last_number, 1)
+        second = bot.handle_message("chat-2", "user-2", "setuju")
+        self.assertEqual(second["invoice_number"], "INV-0002/STA/VIII/2026")
+        self.assertEqual(bot.store.sequence_last_number, 2)
+        self.assertEqual(len(bot.store.invoices), 2)
+
 
 if __name__ == "__main__":
     unittest.main()
-
