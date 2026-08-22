@@ -43,6 +43,10 @@ COMMIT
 inside the approval transaction. Do not pass a user-provided invoice number
 into approval.
 
+`invoices.source_draft_id` is unique so the same draft cannot create two final
+invoice records. Delivery retry/resend creates a new delivery attempt, not a new
+invoice.
+
 Do not use `SELECT MAX(invoice_number) + 1`.
 
 Runtime DB user should be scoped to `invoice_bot_v2`; see `database/create-runtime-user.example.sql`.

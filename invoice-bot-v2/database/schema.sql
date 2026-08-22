@@ -94,9 +94,9 @@ CREATE TABLE invoices (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY uq_invoices_invoice_number (invoice_number),
+  UNIQUE KEY uq_invoices_source_draft (source_draft_id),
   KEY idx_invoices_customer (customer_name),
   KEY idx_invoices_fingerprint (content_fingerprint),
-  KEY idx_invoices_source_draft (source_draft_id),
   CONSTRAINT fk_invoices_customer FOREIGN KEY (customer_id)
     REFERENCES customers(id) ON DELETE SET NULL,
   CONSTRAINT fk_invoices_source_draft FOREIGN KEY (source_draft_id)

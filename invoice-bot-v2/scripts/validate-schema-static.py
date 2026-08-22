@@ -44,6 +44,9 @@ def main() -> int:
     if "PRIMARY KEY (company_code, sequence_year)" not in SCHEMA:
         raise SystemExit("invoice_sequences must key company_code + sequence_year")
 
+    if "UNIQUE KEY uq_invoices_source_draft (source_draft_id)" not in SCHEMA:
+        raise SystemExit("invoices must uniquely bind source_draft_id to prevent duplicate approval inserts")
+
     if "target_chat_id" not in SCHEMA:
         raise SystemExit("invoice_deliveries must store target_chat_id")
 
