@@ -41,6 +41,11 @@ Renderer container tests:
 ./scripts/test-renderer-container.sh
 ```
 
+This builds the renderer test target, runs renderer unit tests inside the
+container, renders the PT Nusa fixture through the runtime image, and verifies
+the generated PDF filename, non-trivial size, `%PDF` signature, SHA-256, and
+reported renderer metadata.
+
 GitHub Actions CI runs:
 
 - host-safe tests

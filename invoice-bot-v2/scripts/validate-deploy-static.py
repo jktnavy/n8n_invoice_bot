@@ -63,6 +63,13 @@ def main() -> int:
         "scripts/healthcheck.sh": ["MODE=\"${1:-auto}\"", "mysqladmin ping", "docker compose exec -T mysql", "Usage: $0 [auto|native|compose]", "exit \"$FAILED\""],
         "scripts/migrate.sh": ["MODE=\"${1:-auto}\"", "MYSQL_MIGRATION_USER", "run_native()", "run_compose()", "MIGRATE=PASS"],
         "scripts/backup-db.sh": ["MODE=\"${1:-auto}\"", "run_native()", "run_compose()", "Backup written:"],
+        "scripts/test-renderer-container.sh": [
+            "docker build --target test",
+            "python -m app.cli /fixtures/pt-nusa-render-request.json",
+            "INV-0001-STA-VIII-2026.pdf",
+            "renderer CLI sha256 does not match host PDF",
+            "PDF_METADATA=PASS",
+        ],
     }
     for relative_path, fragments in script_expectations.items():
         content = (ROOT_DIR / relative_path).read_text()
