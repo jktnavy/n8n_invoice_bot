@@ -524,15 +524,15 @@ def content_fingerprint(d: dict) -> str:
 
 
 def find_existing_by_fingerprint(fp: str, cfp: str):
-    """Cek apakah request yang sama sudah pernah dibuat (full atau content).
-    Return (id, invoice_number) atau None."""
+    """Cek apakah request yang sama sudah pernah dibuat (full atau content),
+    melewati invoice yang statusnya void. Return (id, invoice_number) atau None."""
     conn = _db_conn()
     try:
         with conn.cursor() as cur:
             cur.execute(
                 "SELECT id, invoice_number FROM invoices "
                 "WHERE (request_fingerprint=%s OR content_fingerprint=%s) "
-                "AND invoice_number IS NOT NULL "
+                "AND invoice_number IS NOT NULL AND status != 'void' "
                 "ORDER BY id DESC LIMIT 1", (fp, cfp))
             return cur.fetchone()
     finally:
