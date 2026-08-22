@@ -82,6 +82,14 @@ def main() -> int:
             if column not in query_sql:
                 raise SystemExit(f"{query_name} query must preserve {column}")
 
+    for required_fragment in [
+        "conversation_state IN ('IDLE', 'AWAITING_APPROVAL', 'ERROR')",
+        "ELSE active_draft_id",
+        "ELSE conversation_state",
+    ]:
+        if required_fragment not in CREATE_DRAFT_SQL:
+            raise SystemExit(f"create-draft query missing conversation state guard: {required_fragment}")
+
     for patch_term in ['"draft"', '"payment_type"', '"down_payment_amount"']:
         if patch_term not in PATCH_SCHEMA:
             raise SystemExit(f"invoice patch schema must support payment revision term {patch_term}")

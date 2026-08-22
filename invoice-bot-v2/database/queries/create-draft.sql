@@ -65,7 +65,13 @@ INSERT INTO telegram_conversations (
   'AWAITING_APPROVAL'
 )
 ON DUPLICATE KEY UPDATE
-  active_draft_id = VALUES(active_draft_id),
-  conversation_state = VALUES(conversation_state);
+  active_draft_id = CASE
+    WHEN conversation_state IN ('IDLE', 'AWAITING_APPROVAL', 'ERROR') THEN VALUES(active_draft_id)
+    ELSE active_draft_id
+  END,
+  conversation_state = CASE
+    WHEN conversation_state IN ('IDLE', 'AWAITING_APPROVAL', 'ERROR') THEN VALUES(conversation_state)
+    ELSE conversation_state
+  END;
 
 COMMIT;

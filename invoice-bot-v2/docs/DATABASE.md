@@ -26,6 +26,11 @@ Drafts do not consume final invoice numbers.
 `down_payment_amount` and `balance_due`. The workflow recalculates these values
 from extracted payment intent and grand total before persistence.
 
+Draft creation updates `telegram_conversations.active_draft_id` only when the
+conversation is `IDLE`, already `AWAITING_APPROVAL`, or `ERROR`. It must not
+replace a conversation that is currently generating, delivering, or already
+sent.
+
 Sequence allocation strategy:
 
 ```text
