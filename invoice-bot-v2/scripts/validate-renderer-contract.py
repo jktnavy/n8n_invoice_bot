@@ -52,6 +52,7 @@ def main() -> int:
         failures.extend(validate_invoice_payload(invoice))
 
     failures.extend(validate_renderer_has_no_database_access())
+    failures.extend(validate_renderer_response_contract())
     failures.extend(validate_n8n_renderer_handoff_contract())
     failures.extend(validate_n8n_telegram_document_contract())
 
@@ -124,6 +125,65 @@ def validate_renderer_has_no_database_access() -> list[str]:
         for name, pattern in FORBIDDEN_RENDERER_PATTERNS.items():
             if pattern.search(text):
                 failures.append(f"{path.relative_to(ROOT_DIR)}: forbidden renderer database access marker {name}")
+    return failures
+
+
+def validate_renderer_response_contract() -> list[str]:
+    failures = []
+    main_text = (RENDERER_APP_DIR / "main.py").read_text()
+    cli_text = (RENDERER_APP_DIR / "cli.py").read_text()
+    renderer_text = (RENDERER_APP_DIR / "renderer.py").read_text()
+    schemas_text = (RENDERER_APP_DIR / "schemas.py").read_text()
+    runtime_script = (ROOT_DIR / "scripts" / "test-renderer-container.sh").read_text()
+
+    for required_fragment in [
+        "response_model=RenderInvoiceResponse",
+        "RenderInvoiceResponse(ok=True",
+        "file_path=str(file_path)",
+        "sha256=digest",
+        "size=size",
+    ]:
+        if required_fragment not in main_text:
+            failures.append(f"services/invoice-renderer/app/main.py missing {required_fragment}")
+
+    for required_fragment in [
+        '"ok": True',
+        '"file_path": str(file_path)',
+        '"sha256": digest',
+        '"size": size',
+    ]:
+        if required_fragment not in cli_text:
+            failures.append(f"services/invoice-renderer/app/cli.py missing {required_fragment}")
+
+    for required_fragment in [
+        "digest = sha256_file(output_path)",
+        "return output_path, digest, output_path.stat().st_size",
+        'filename = safe_filename(invoice.invoice_number) + ".pdf"',
+    ]:
+        if required_fragment not in renderer_text:
+            failures.append(f"services/invoice-renderer/app/renderer.py missing {required_fragment}")
+
+    for required_fragment in [
+        "class RenderInvoiceResponse",
+        "ok: bool",
+        "file_path: str",
+        "sha256: str",
+        "size: int",
+    ]:
+        if required_fragment not in schemas_text:
+            failures.append(f"services/invoice-renderer/app/schemas.py missing {required_fragment}")
+
+    for required_fragment in [
+        "PDF_GENERATED=YES",
+        "PDF_METADATA=PASS",
+        "payload[\"sha256\"]",
+        "payload[\"size\"]",
+        "head -c 4",
+        "grep -q '%PDF'",
+    ]:
+        if required_fragment not in runtime_script:
+            failures.append(f"scripts/test-renderer-container.sh missing {required_fragment}")
+
     return failures
 
 
