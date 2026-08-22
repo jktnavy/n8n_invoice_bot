@@ -7,7 +7,12 @@ function normalizeText(value) {
 
 function canonicalInt(value) {
   if (value === null || value === undefined || value === '') return 0;
-  return Number.parseInt(String(value).replace(/[^\d-]/g, ''), 10);
+  const normalized = String(value).trim().toLowerCase().replace(/\s+/g, '');
+  if (normalized.includes('juta')) {
+    const amount = normalized.replace('rp', '').replace('juta', '').replace(',', '.');
+    return Math.round(Number.parseFloat(amount) * 1000000);
+  }
+  return Number.parseInt(normalized.replace(/[^\d-]/g, ''), 10);
 }
 
 const canonical = {
@@ -29,4 +34,3 @@ const payload = JSON.stringify(canonical);
 const contentFingerprint = crypto.createHash('sha256').update(payload).digest('hex');
 
 return [{ json: { ...$json, canonical_business_data: canonical, content_fingerprint: contentFingerprint } }];
-

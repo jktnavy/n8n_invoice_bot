@@ -9,6 +9,8 @@
 - fingerprint
 - JSON schema validation
 - invoice sequence
+- n8n deterministic Code node snippets
+- static database schema invariants
 
 Host-safe checks:
 

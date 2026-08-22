@@ -9,6 +9,7 @@ PYTHONPATH="$ROOT_DIR/services/invoice-core" \
   python3 -m unittest discover -s "$ROOT_DIR/services/invoice-core/tests" -v
 
 python3 "$ROOT_DIR/scripts/validate-fixture.py"
+python3 "$ROOT_DIR/scripts/validate-schema-static.py"
 
 python3 -m compileall -q \
   "$ROOT_DIR/services/invoice-core" \
@@ -22,6 +23,8 @@ done
 for file in "$ROOT_DIR"/n8n/code/*.js; do
   node --check "$file"
 done
+
+node "$ROOT_DIR/scripts/test-n8n-code.js"
 
 for file in "$ROOT_DIR"/scripts/*.sh; do
   bash -n "$file"
