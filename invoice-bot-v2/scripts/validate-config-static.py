@@ -84,6 +84,12 @@ def main() -> int:
         "${INVOICE_RENDERER_PORT:-8000}:8000",
         "${N8N_PORT:-5678}:5678",
         "NODE_FUNCTION_ALLOW_BUILTIN",
+        "TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}",
+        "LLM_PROVIDER: ${LLM_PROVIDER:-openai}",
+        "LLM_MODEL: ${LLM_MODEL}",
+        "LLM_API_KEY: ${LLM_API_KEY}",
+        "LLM_BASE_URL: ${LLM_BASE_URL}",
+        "INVOICE_RENDERER_URL: ${INVOICE_RENDERER_URL:-http://invoice-renderer:8000}",
     ]
     for bit in expected_compose_bits:
         if bit not in compose:
