@@ -539,6 +539,51 @@ def find_existing_by_fingerprint(fp: str, cfp: str):
         conn.close()
 
 
+def get_invoice_by_number(inv_no: str):
+    """Return (id, invoice_number, pdf_path) untuk nomor invoice, atau None."""
+    conn = _db_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id, invoice_number, pdf_path FROM invoices "
+                "WHERE invoice_number=%s LIMIT 1", (inv_no,))
+            return cur.fetchone()
+    finally:
+        conn.close()
+
+
+def validate_chat_id(chat_id: str) -> bool:
+    """Cek validitas chat via getChat. Return True jika chat ada & dapat dikirim."""
+    import urllib.error
+    _load_env_file()
+    token = os.environ.get('TELEGRAM_BOT_TOKEN', '').strip()
+    if not token or not re.match(r'^-?\d+$', str(chat_id).strip()):
+        return False
+    try:
+        req = urllib.request.Request(
+            f'https://api.telegram.org/bot{token}/getChat',
+            data=json.dumps({'chat_id': str(chat_id).strip()}).encode(),
+            headers={'Content-Type': 'application/json'}, method='POST')
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            data = json.loads(resp.read().decode())
+            return bool(data.get('ok'))
+    except Exception:
+        return False
+
+
+def pick_valid_chat(candidate: str) -> str:
+    """Prioritaskan kandidat; jika tidak valid, fallback ke grup allowlist
+    (TELEGRAM_GROUP_ALLOWED_CHATS). Return chat id valid atau ''."""
+    _load_env_file()
+    if candidate and re.match(r'^-?\d+$', str(candidate).strip()) and validate_chat_id(candidate):
+        return str(candidate).strip()
+    allowed = os.environ.get('TELEGRAM_GROUP_ALLOWED_CHATS', '').strip()
+    for fb in [x.strip() for x in allowed.split(',') if x.strip()]:
+        if validate_chat_id(fb):
+            return fb
+    return ''
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -559,11 +604,13 @@ def send_telegram_document(chat_id: str, pdf_path: Path) -> dict:
     """Kirim PDF ke chat Telegram via Bot API.
 
     Return dict: {"ok": bool, "chat_id": str, "message_id": int|None,
+                  "http_status": int|None, "error_code": int|None,
                   "description": str}
     """
+    import urllib.error
     _load_env_file()
     result = {'ok': False, 'chat_id': str(chat_id), 'message_id': None,
-              'description': ''}
+              'http_status': None, 'error_code': None, 'description': ''}
     token = os.environ.get('TELEGRAM_BOT_TOKEN', '').strip()
     if not token:
         result['description'] = 'TELEGRAM_BOT_TOKEN kosong'
@@ -590,13 +637,25 @@ def send_telegram_document(chat_id: str, pdf_path: Path) -> dict:
     req.add_header('Content-Type', f'multipart/form-data; boundary={boundary}')
     try:
         with urllib.request.urlopen(req, timeout=60) as resp:
+            result['http_status'] = resp.status
             data = json.loads(resp.read().decode())
             if data.get('ok'):
                 result['ok'] = True
                 result['message_id'] = (data.get('result') or {}).get('message_id')
                 return result
+            result['error_code'] = data.get('error_code')
             result['description'] = data.get('description') or 'sendDocument gagal'
             return result
+    except urllib.error.HTTPError as exc:
+        result['http_status'] = exc.code
+        raw = exc.read().decode('utf-8', errors='replace')
+        try:
+            j = json.loads(raw)
+            result['error_code'] = j.get('error_code')
+            result['description'] = j.get('description') or raw
+        except Exception:
+            result['description'] = raw[:500]
+        return result
     except Exception as exc:
         result['description'] = f'exception: {exc}'
         return result
@@ -605,6 +664,7 @@ def send_telegram_document(chat_id: str, pdf_path: Path) -> dict:
 def main() -> None:
     if len(sys.argv) < 2:
         print('Usage: python3 render_invoice.py /tmp/invoice_draft.json [--pdf-only] [--chat <id>]')
+        print('       python3 render_invoice.py --retry-send INV-0007/STA/VIII/2026 --chat <id>')
         sys.exit(1)
 
     pdf_only = '--pdf-only' in sys.argv
@@ -613,6 +673,49 @@ def main() -> None:
         i = sys.argv.index('--chat')
         if i + 1 < len(sys.argv):
             chat_arg = sys.argv[i + 1]
+
+    # ---- MODE RETRY DELIVERY (tanpa membuat invoice baru) ----
+    if '--retry-send' in sys.argv:
+        _load_env_file()
+        j = sys.argv.index('--retry-send')
+        inv_no = sys.argv[j + 1] if j + 1 < len(sys.argv) else ''
+        if not inv_no:
+            print('INVOICE_RESULT=FAILED (--retry-send butuh nomor invoice)')
+            sys.exit(1)
+        print(f'RETRY_SEND_INVOICE={inv_no}')
+        row = get_invoice_by_number(inv_no)
+        if not row:
+            print('INVOICE_RESULT=FAILED (invoice tidak ditemukan di DB)')
+            sys.exit(20)
+        inv_id, inv_number, db_pdf = row
+        pdf_path = Path(db_pdf) if db_pdf else (OUTPUT_DIR / f"{inv_number.replace('/', '-')}.pdf")
+        if not pdf_path.exists():
+            print(f'INVOICE_RESULT=FAILED (PDF tidak ada: {pdf_path})')
+            sys.exit(20)
+        print(f'RETRY_PDF={pdf_path}')
+        chat = pick_valid_chat(chat_arg)
+        print(f'TARGET_CHAT_ID={chat or "(tidak valid)"}')
+        if not chat:
+            print('INVOICE_RESULT=FAILED (chat id tidak valid)')
+            sys.exit(20)
+        result = send_telegram_document(chat, pdf_path)
+        print(f"TELEGRAM_HTTP_STATUS={result.get('http_status')}")
+        print(f"TELEGRAM_SEND_OK={'true' if result['ok'] else 'false'}")
+        print(f"TELEGRAM_CHAT_ID={result['chat_id']}")
+        if result['message_id'] is not None:
+            print(f"TELEGRAM_MESSAGE_ID={result['message_id']}")
+        if result.get('error_code') is not None:
+            print(f"TELEGRAM_ERROR_CODE={result['error_code']}")
+        if result.get('description'):
+            print(f"TELEGRAM_DESCRIPTION={result['description']}")
+        update_delivery_status(inv_id, 'sent' if result['ok'] else 'failed',
+                               result['message_id'], result['chat_id'],
+                               None if result['ok'] else result['description'])
+        if result['ok']:
+            print('INVOICE_RESULT=OK (retry delivery)')
+            sys.exit(0)
+        print('INVOICE_RESULT=FAILED (Telegram delivery gagal pada retry)')
+        sys.exit(20)
 
     data = normalize(json.load(open(sys.argv[1])))
     request_id = str(data.get('request_id') or '').strip() or uuid.uuid4().hex[:12]
@@ -648,14 +751,21 @@ def main() -> None:
                 print('EXISTING_PDF=missing')
                 print('INVOICE_RESULT=FAILED (invoice duplikat tapi PDF lama tidak ada)')
                 sys.exit(20)
-            chat = _resolve_chat()
+            chat = pick_valid_chat(_resolve_chat())
+            print(f"TARGET_CHAT_ID={chat or '(tidak valid)'}")
+            if not chat:
+                print('INVOICE_RESULT=FAILED (chat id tidak valid)')
+                sys.exit(20)
             result = send_telegram_document(chat, pdf_path)
+            print(f"TELEGRAM_HTTP_STATUS={result.get('http_status')}")
             print(f"TELEGRAM_SEND_OK={'true' if result['ok'] else 'false'}")
             print(f"TELEGRAM_CHAT_ID={result['chat_id']}")
             if result['message_id'] is not None:
                 print(f"TELEGRAM_MESSAGE_ID={result['message_id']}")
+            if result.get('error_code') is not None:
+                print(f"TELEGRAM_ERROR_CODE={result['error_code']}")
             if result.get('description'):
-                print(f"TELEGRAM_ERROR={result['description']}")
+                print(f"TELEGRAM_DESCRIPTION={result['description']}")
             update_delivery_status(exist_id,
                                    'sent' if result['ok'] else 'failed',
                                    result['message_id'], result['chat_id'],
@@ -697,21 +807,25 @@ def main() -> None:
     print(f'RECORD_ID={inv_id}')
 
     # --- Kirim PDF langsung ke Telegram (error handling ketat) ---
-    chat = _resolve_chat()
-    if not re.match(r'^-?\d+$', chat):
-        print('⚠️ Tidak ada chat id — PDF tidak dikirim otomatis (gunakan --chat <id>)')
+    chat = pick_valid_chat(_resolve_chat())
+    print(f"TARGET_CHAT_ID={chat or '(tidak valid)'}")
+    if not chat:
+        print('⚠️ Chat id tidak valid (getChat gagal / fallback kosong)')
         update_delivery_status(inv_id, 'failed', None, None,
-                               'chat id tidak ditemukan')
-        print('INVOICE_RESULT=FAILED (chat id tidak ditemukan)')
+                               'chat id tidak valid')
+        print('INVOICE_RESULT=FAILED (chat id tidak valid)')
         sys.exit(20)
 
     result = send_telegram_document(chat, pdf_path)
+    print(f"TELEGRAM_HTTP_STATUS={result.get('http_status')}")
     print(f"TELEGRAM_SEND_OK={'true' if result['ok'] else 'false'}")
     print(f"TELEGRAM_CHAT_ID={result['chat_id']}")
     if result['message_id'] is not None:
         print(f"TELEGRAM_MESSAGE_ID={result['message_id']}")
+    if result.get('error_code') is not None:
+        print(f"TELEGRAM_ERROR_CODE={result['error_code']}")
     if result.get('description'):
-        print(f"TELEGRAM_ERROR={result['description']}")
+        print(f"TELEGRAM_DESCRIPTION={result['description']}")
 
     if result['ok']:
         update_delivery_status(inv_id, 'sent', result['message_id'],

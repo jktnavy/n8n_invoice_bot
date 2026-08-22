@@ -173,12 +173,18 @@ revisi/preview invoice yang sedang dibuat.
    hanya karena koreksi kecil (AGENTS.md §11).
 
 6. Setelah **disetujui**, tulis JSON ke file sementara (sertakan `request_id` random
-   dan `source_chat` = ID numerik chat dari konteks gateway) lalu jalankan dengan
-   `--chat <ID_NUMERIK_CHAT>` (WAJIB; contoh grup `-5483961981`, DM `1301178833`):
+   dan `source_chat` = ID numerik chat DARI KONTEKS GATEWAY — chat id pesan yang
+   benar-benar diterima, contoh `-5483961981`) lalu jalankan dengan
+   `--chat <ID_NUMERIK_CHAT>` (WAJIB):
 
    ```
    /home/invoicebot/.hermes/venvs/invoice-sta/bin/python scripts/render_invoice.py /tmp/invoice_draft.json --chat -5483961981
    ```
+
+   ⚠️ **DILARANG mengarang/menebak chat id.** JANGAN membuat id sendiri (mis. menambah
+   `-100` di depan user id → itu id palsu dan gagal). Gunakan persis chat id dari
+   update Telegram yang diterima. Script tetap akan memvalidasi via `getChat` dan
+   fallback ke grup utama jika id tidak valid.
 
    Script akan: menentukan nomor invoice dari DB (`INV-0001/STA/VIII/2026`), render
    PDF, simpan ke MySQL, LALU **mengirim PDF langsung ke chat** lewat Bot API.
@@ -186,24 +192,32 @@ revisi/preview invoice yang sedang dibuat.
    - `TELEGRAM_SEND_OK=true/false`
    - `TELEGRAM_CHAT_ID=...`
    - `TELEGRAM_MESSAGE_ID=<angka>` (hanya jika ok)
+   - `TELEGRAM_HTTP_STATUS=...`, `TELEGRAM_ERROR_CODE=...`, `TELEGRAM_DESCRIPTION=...` (jika gagal)
    - `INVOICE_RESULT=OK` atau `INVOICE_RESULT=FAILED (...)`
    - exit code: `0` = sukses penuh, `20` = Telegram delivery gagal.
 
-7. **Balas konfirmasi HANYA berdasarkan bukti output script:**
-   - Jika output mengandung `TELEGRAM_SEND_OK=true` DAN `TELEGRAM_MESSAGE_ID=<angka>`
-     DAN `INVOICE_RESULT=OK` (exit 0), balas:
-     ```
-     Invoice INV-0001/STA/VIII/2026 berhasil dibuat dan PDF sudah terkirim.
-     ```
-   - Jika `INVOICE_RESULT=FAILED` atau `TELEGRAM_SEND_OK=false`, balas dengan JUJUR:
-     ```
-     Invoice berhasil dibuat, tetapi pengiriman PDF ke Telegram GAGAL.
-     ```
-   - Jika script memunculkan `POTENTIAL_DUPLICATE=true`, BERITAHU user bahwa invoice
-     yang sama sudah ada (mis. INV-0001) dan tidak dibuat nomor baru.
+7. **Balas konfirmasi HANYA berdasarkan bukti output script.** Gunakan format:
 
-   ⚠️ DILARANG mengarang status pengiriman. JANGAN menyatakan "PDF terkirim" tanpa
-   bukti `TELEGRAM_MESSAGE_ID`. JANGAN menulis path file atau `[[as_document]]`.
+   - Jika `TELEGRAM_SEND_OK=true` DAN `TELEGRAM_MESSAGE_ID=<angka>` DAN `INVOICE_RESULT=OK`:
+     ```
+     PEMBUATAN INVOICE: SUCCESS
+     DELIVERY TELEGRAM: SUCCESS (message_id: <angka>)
+     OVERALL REQUEST : SUCCESS
+     ```
+   - Jika `INVOICE_RESULT=FAILED` atau `TELEGRAM_SEND_OK=false`, balas JUJUR:
+     ```
+     PEMBUATAN INVOICE: SUCCESS
+     DELIVERY TELEGRAM: FAILED (<TELEGRAM_DESCRIPTION>)
+     OVERALL REQUEST : FAILED
+     Invoice berhasil dibuat, tetapi pengiriman PDF gagal.
+     Saya tidak akan membuat nomor invoice baru. Retry akan menggunakan
+     invoice yang sama.
+     ```
+   - Jika `POTENTIAL_DUPLICATE=true`, beri tahu user invoice yang sama sudah ada
+     (mis. INV-0007) dan tidak dibuat nomor baru.
+
+   ⚠️ DILARANG mengarang status pengiriman dan DILARANG menawarkan "kirim manual"
+   selagi mode retry otomatis tersedia. JANGAN menulis path file atau `[[as_document]]`.
 
 8. Konfirmasi: nomor invoice, total, delivery status, dan bahwa record tersimpan
    di MySQL (kolom `delivery_status` = sent/failed).
