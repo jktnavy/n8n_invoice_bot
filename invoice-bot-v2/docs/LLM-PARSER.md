@@ -19,3 +19,12 @@ Schemas:
 - `llm/schemas/invoice-patch.schema.json`
 
 LLM output must be rejected when it does not match schema.
+
+OpenAI provider implementation:
+
+- Uses the Responses API endpoint.
+- Sends schema-constrained `text.format` JSON Schema payloads with `strict: true`.
+- Uses only stdlib HTTP so host-safe tests do not require SDK installation.
+- Requires `LLM_API_KEY` and `LLM_MODEL` at runtime.
+
+This follows the official OpenAI Structured Outputs guidance: Structured Outputs are recommended over JSON mode when possible because they enforce schema adherence, and the Responses API supports schema-constrained output with `text.format`.

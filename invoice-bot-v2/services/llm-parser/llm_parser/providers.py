@@ -32,24 +32,12 @@ def provider_from_env() -> LLMProvider:
 
         return MockProvider()
     if config.provider == "openai":
+        from .openai_provider import OpenAIProvider
+
         return OpenAIProvider(config)
     if config.provider in {"deepseek", "gemini", "openrouter"}:
         return NotImplementedProvider(config)
     raise ValueError(f"Unsupported LLM_PROVIDER: {config.provider}")
-
-
-class OpenAIProvider:
-    def __init__(self, config: ProviderConfig):
-        self.config = config
-
-    def classify_intent(self, message: str) -> dict:
-        raise NotImplementedError("OpenAI Responses API wiring belongs in n8n or a later parser service phase")
-
-    def extract_invoice(self, message: str, context: dict | None = None) -> dict:
-        raise NotImplementedError("OpenAI Responses API wiring belongs in n8n or a later parser service phase")
-
-    def extract_patch(self, message: str, active_draft: dict) -> dict:
-        raise NotImplementedError("OpenAI Responses API wiring belongs in n8n or a later parser service phase")
 
 
 class NotImplementedProvider:
