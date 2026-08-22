@@ -107,6 +107,7 @@ class InvoiceCoreTest(unittest.TestCase):
     def test_approval_requires_awaiting_approval_state(self):
         self.assertTrue(is_natural_approval("oke", "AWAITING_APPROVAL"))
         self.assertFalse(is_natural_approval("oke", "IDLE"))
+        self.assertFalse(is_natural_approval("buat", "AWAITING_APPROVAL"))
 
 
 if __name__ == "__main__":

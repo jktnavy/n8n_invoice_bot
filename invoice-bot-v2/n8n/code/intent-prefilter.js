@@ -1,9 +1,11 @@
 const text = ($json.raw_message || '').trim().toLowerCase();
-const approvals = new Set(['setuju', 'iya', 'ya', 'oke', 'ok', 'gas', 'lanjut', 'buat', 'sudah benar', 'sip']);
+const approvals = new Set(['setuju', 'iya', 'ya', 'oke', 'ok', 'gas', 'lanjut', 'sudah benar', 'sip']);
 
 let intent = 'UNKNOWN';
 if (approvals.has(text)) {
   intent = 'APPROVE_DRAFT';
+} else if (/\b(batal|cancel|batalkan)\b/.test(text)) {
+  intent = 'CANCEL_DRAFT';
 } else if (/kirim.*ulang|kirim.*lagi|resend/.test(text)) {
   intent = 'RESEND_INVOICE';
 } else if (/status|sudah terkirim|invoice .* mana/.test(text)) {

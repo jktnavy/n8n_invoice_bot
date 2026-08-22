@@ -42,6 +42,8 @@ class InvoiceBotSimulator:
             return self._update_draft(chat_id, user_id, message, conversation, correlation_id)
         if intent == "APPROVE_DRAFT":
             return self._approve(chat_id, user_id, message, conversation, delivery_ok, correlation_id)
+        if intent == "CANCEL_DRAFT":
+            return self._cancel_draft(chat_id, user_id, conversation, correlation_id)
         if intent == "RESEND_INVOICE":
             return self._resend(chat_id, user_id, conversation, delivery_ok, correlation_id)
         if intent == "GET_STATUS":
@@ -152,6 +154,19 @@ class InvoiceBotSimulator:
             "delivery_status": delivery["status"],
             "grand_total": invoice["grand_total"],
         }
+
+    def _cancel_draft(self, chat_id: str, user_id: str | None, conversation: dict, correlation_id: str) -> dict:
+        draft_id = conversation.get("active_draft_id")
+        if conversation.get("conversation_state") != "AWAITING_APPROVAL" or not draft_id:
+            self._audit(correlation_id, "ERROR", "draft", None, chat_id, user_id, message="No active draft to cancel")
+            return {"type": "NO_ACTIVE_DRAFT"}
+
+        draft = self.store.drafts[draft_id]
+        draft["status"] = "CANCELLED"
+        conversation["active_draft_id"] = None
+        conversation["conversation_state"] = "IDLE"
+        self._audit(correlation_id, "DRAFT_CANCELLED", "draft", draft_id, chat_id, user_id)
+        return {"type": "DRAFT_CANCELLED", "draft_id": draft_id}
 
     def _resend(self, chat_id: str, user_id: str | None, conversation: dict, delivery_ok: bool, correlation_id: str) -> dict:
         invoice_id = conversation.get("last_invoice_id")

@@ -64,6 +64,16 @@ const routedIntent = runSnippet('n8n/code/intent-prefilter.js', webhookMessage)[
 assert.strictEqual(routedIntent.intent, 'CREATE_INVOICE');
 assert.strictEqual(routedIntent.intent_source, 'deterministic_prefilter');
 
+const cancelIntent = runSnippet('n8n/code/intent-prefilter.js', {
+  raw_message: 'batalkan invoice ini',
+})[0].json;
+assert.strictEqual(cancelIntent.intent, 'CANCEL_DRAFT');
+
+const ambiguousCreateVerbIntent = runSnippet('n8n/code/intent-prefilter.js', {
+  raw_message: 'buat',
+})[0].json;
+assert.strictEqual(ambiguousCreateVerbIntent.intent, 'UNKNOWN');
+
 const calculated = runSnippet('n8n/code/calculate-invoice.js', invoice)[0].json;
 assert.strictEqual(calculated.items[0].line_total, 5600000);
 assert.strictEqual(calculated.items[1].line_total, 5200000);

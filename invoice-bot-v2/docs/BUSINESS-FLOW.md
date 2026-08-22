@@ -36,6 +36,12 @@ approval message
 
 Revisions update the active draft only. They must recalculate totals and send a new preview. They must not create final invoices.
 
+## Cancel Draft
+
+Cancellation is allowed before approval only. It marks the active draft
+`CANCELLED`, clears `telegram_conversations.active_draft_id`, returns the
+conversation to `IDLE`, and must not allocate an invoice number.
+
 ## Payment
 
 `DOWN_PAYMENT` stores the accepted DP amount and recalculates `balance_due`
@@ -58,4 +64,5 @@ Every incoming Telegram message gets a `correlation_id` and writes
 flows must record at least `DRAFT_CREATED`, `PREVIEW_SENT`,
 `APPROVAL_RECEIVED`, `INVOICE_CREATED`, `PDF_GENERATED`, `DELIVERY_STARTED`,
 and `DELIVERY_SENT`. Failures use `ERROR` or the specific failure event, such as
-`DELIVERY_FAILED`. Resend success records `INVOICE_RESENT`.
+`DELIVERY_FAILED`. Draft cancellation records `DRAFT_CANCELLED`. Resend success
+records `INVOICE_RESENT`.

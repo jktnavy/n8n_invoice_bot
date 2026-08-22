@@ -45,8 +45,12 @@ def healthcheck_provider(message: str) -> int:
         "CREATE_INVOICE",
         "UPDATE_DRAFT",
         "APPROVE_DRAFT",
+        "CANCEL_DRAFT",
         "RESEND_INVOICE",
         "GET_STATUS",
+        "GET_INVOICE",
+        "CANCEL_INVOICE",
+        "HELP",
         "UNKNOWN",
     }
     print(

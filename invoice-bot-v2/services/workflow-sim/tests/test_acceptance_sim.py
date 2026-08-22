@@ -144,6 +144,24 @@ class AcceptanceSimulatorTest(unittest.TestCase):
         self.assertEqual(result["type"], "NO_ACTIVE_DRAFT")
         self.assertEqual(len(bot.store.invoices), 0)
 
+    def test_cancel_draft_clears_active_draft_without_invoice_number(self):
+        bot = InvoiceBotSimulator()
+        preview = bot.handle_message("chat-1", "user-1", CREATE_MESSAGE)
+
+        cancelled = bot.handle_message("chat-1", "user-1", "batalkan invoice ini")
+
+        self.assertEqual(cancelled["type"], "DRAFT_CANCELLED")
+        self.assertEqual(cancelled["draft_id"], preview["draft_id"])
+        self.assertEqual(bot.store.drafts[preview["draft_id"]]["status"], "CANCELLED")
+        self.assertIsNone(bot.store.conversations[("chat-1", "user-1")]["active_draft_id"])
+        self.assertEqual(bot.store.conversations[("chat-1", "user-1")]["conversation_state"], "IDLE")
+        self.assertEqual(len(bot.store.invoices), 0)
+        self.assertAuditEventsInclude(bot, ["DRAFT_CANCELLED"])
+
+        approved = bot.handle_message("chat-1", "user-1", "setuju")
+        self.assertEqual(approved["type"], "NO_ACTIVE_DRAFT")
+        self.assertEqual(len(bot.store.invoices), 0)
+
     def test_status_without_invoice_does_not_guess(self):
         bot = InvoiceBotSimulator()
         result = bot.handle_message("chat-1", "user-1", "status invoice")
