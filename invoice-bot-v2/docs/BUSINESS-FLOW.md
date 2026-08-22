@@ -35,3 +35,4 @@ approval message
 
 Revisions update the active draft only. They must recalculate totals and send a new preview. They must not create final invoices.
 
+The offline workflow simulator in `services/workflow-sim` is an executable contract for these flows. n8n implementation should preserve the same observable behavior.

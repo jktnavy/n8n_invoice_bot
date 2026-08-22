@@ -11,6 +11,9 @@ PYTHONPATH="$ROOT_DIR/services/invoice-core" \
 PYTHONPATH="$ROOT_DIR/services/llm-parser" \
   python3 -m unittest discover -s "$ROOT_DIR/services/llm-parser/tests" -v
 
+PYTHONPATH="$ROOT_DIR/services/invoice-core:$ROOT_DIR/services/llm-parser:$ROOT_DIR/services/workflow-sim" \
+  python3 -m unittest discover -s "$ROOT_DIR/services/workflow-sim/tests" -v
+
 python3 "$ROOT_DIR/scripts/validate-fixture.py"
 python3 "$ROOT_DIR/scripts/validate-schema-static.py"
 

@@ -44,3 +44,10 @@ Renderer container tests:
 - retry failed delivery
 - duplicate detection
 - ambiguous request asks for missing data
+
+Offline acceptance simulator:
+
+```bash
+PYTHONPATH=services/invoice-core:services/llm-parser:services/workflow-sim \
+  python3 -m unittest discover -s services/workflow-sim/tests -v
+```
