@@ -27,6 +27,14 @@ Delivery destination column:
 target_chat_id
 ```
 
+n8n prepares a `sendDocument` payload with:
+
+```text
+chat_id
+document_path
+caption
+```
+
 The dependency-free Telegram gateway client in `services/telegram-gateway` maps `sendDocument` responses into DB-ready delivery metadata:
 
 ```text

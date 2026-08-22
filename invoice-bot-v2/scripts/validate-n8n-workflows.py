@@ -97,13 +97,16 @@ WORKFLOW_CONTRACTS = {
         "nodes": {
             "Execute Workflow Trigger": "n8n-nodes-base.executeWorkflowTrigger",
             "Delivery Guard": "n8n-nodes-base.code",
+            "Prepare Telegram Document": "n8n-nodes-base.code",
             "Parse Telegram Delivery Result": "n8n-nodes-base.code",
         },
         "edges": [
             ("Execute Workflow Trigger", "Delivery Guard"),
-            ("Delivery Guard", "Parse Telegram Delivery Result"),
+            ("Delivery Guard", "Prepare Telegram Document"),
+            ("Prepare Telegram Document", "Parse Telegram Delivery Result"),
         ],
         "snippet_files": {
+            "Prepare Telegram Document": "n8n/code/prepare-telegram-document.js",
             "Parse Telegram Delivery Result": "n8n/code/telegram-delivery-result.js",
         },
         "code_contains": {

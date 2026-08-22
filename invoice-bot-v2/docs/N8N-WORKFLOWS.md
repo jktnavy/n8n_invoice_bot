@@ -50,6 +50,7 @@ Deterministic snippets:
 - `calculate-invoice.js`
 - `content-fingerprint.js`
 - `prepare-render-request.js`
+- `prepare-telegram-document.js`
 - `render-preview.js`
 - `telegram-delivery-result.js`
 
@@ -60,6 +61,9 @@ preview without allocating an invoice number.
 `04-approve-invoice` expects the approved invoice payload loaded from the
 database transaction, validates it as a full renderer request, and carries the
 Telegram target chat for delivery handoff.
+
+`05-send-invoice` prepares a `sendDocument` payload from `target_chat_id` and
+the rendered PDF path, then maps Telegram response metadata for persistence.
 
 `content-fingerprint.js` uses Node built-in `crypto`; set:
 

@@ -131,6 +131,18 @@ assert.strictEqual(renderHandoff.target_chat_id, '123456');
 assert.strictEqual(renderHandoff.render_request.invoice.invoice_number, 'INV-0001/STA/VIII/2026');
 assert.strictEqual(renderHandoff.render_request.invoice.status_label, 'LUNAS');
 
+const telegramDocument = runSnippet('n8n/code/prepare-telegram-document.js', {
+  invoice_id: 1,
+  invoice_number: 'INV-0001/STA/VIII/2026',
+  target_chat_id: '123456',
+  pdf_path: '/data/invoices/INV-0001.pdf',
+})[0].json;
+assert.strictEqual(telegramDocument.telegram_method, 'sendDocument');
+assert.strictEqual(telegramDocument.delivery_status, 'sending');
+assert.strictEqual(telegramDocument.telegram_document_payload.chat_id, '123456');
+assert.strictEqual(telegramDocument.telegram_document_payload.document_path, '/data/invoices/INV-0001.pdf');
+assert.match(telegramDocument.telegram_document_payload.caption, /INV-0001\/STA\/VIII\/2026/);
+
 const delivery = runSnippet('n8n/code/telegram-delivery-result.js', {
   telegram_response: { ok: true, result: { message_id: 12345 } },
 })[0].json;

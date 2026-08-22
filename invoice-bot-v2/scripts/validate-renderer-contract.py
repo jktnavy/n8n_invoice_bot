@@ -8,6 +8,7 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT_DIR / "tests" / "fixtures" / "pt-nusa-render-request.json"
 RENDERER_APP_DIR = ROOT_DIR / "services" / "invoice-renderer" / "app"
 PREPARE_RENDER_SNIPPET = ROOT_DIR / "n8n" / "code" / "prepare-render-request.js"
+PREPARE_TELEGRAM_SNIPPET = ROOT_DIR / "n8n" / "code" / "prepare-telegram-document.js"
 
 REQUIRED_INVOICE_FIELDS = {
     "invoice_number",
@@ -50,6 +51,7 @@ def main() -> int:
 
     failures.extend(validate_renderer_has_no_database_access())
     failures.extend(validate_n8n_renderer_handoff_contract())
+    failures.extend(validate_n8n_telegram_document_contract())
 
     if failures:
         print("RENDERER_CONTRACT_VALIDATION=FAIL")
@@ -132,6 +134,21 @@ def validate_n8n_renderer_handoff_contract() -> list[str]:
     ]:
         if required_fragment not in text:
             failures.append(f"{PREPARE_RENDER_SNIPPET.relative_to(ROOT_DIR)} missing {required_fragment}")
+    return failures
+
+
+def validate_n8n_telegram_document_contract() -> list[str]:
+    text = PREPARE_TELEGRAM_SNIPPET.read_text()
+    failures = []
+    for required_fragment in [
+        "telegram_method: 'sendDocument'",
+        "telegram_document_payload",
+        "document_path",
+        ".endsWith('.pdf')",
+        "delivery_payload_ready",
+    ]:
+        if required_fragment not in text:
+            failures.append(f"{PREPARE_TELEGRAM_SNIPPET.relative_to(ROOT_DIR)} missing {required_fragment}")
     return failures
 
 
