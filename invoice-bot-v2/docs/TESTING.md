@@ -11,6 +11,7 @@
 - invoice sequence
 - n8n deterministic Code node snippets
 - static database schema invariants
+- renderer payload/no-database contract
 
 Host-safe checks:
 
@@ -23,6 +24,7 @@ Static config validation is included in `test-local` and can be run directly:
 ```bash
 ./scripts/validate-config-static.py
 ./scripts/validate-deploy-static.py
+./scripts/validate-renderer-contract.py
 ./scripts/scan-secrets.py
 ./scripts/readiness-gate.py
 ```

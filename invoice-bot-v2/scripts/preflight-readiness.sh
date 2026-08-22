@@ -41,6 +41,7 @@ check_port "${N8N_PORT:-5678}"
 ./scripts/validate-config-static.py
 ./scripts/validate-deploy-static.py
 ./scripts/validate-schema-static.py
+./scripts/validate-renderer-contract.py
 ./scripts/validate-n8n-workflows.py
 ./scripts/scan-secrets.py
 ./scripts/readiness-gate.py
