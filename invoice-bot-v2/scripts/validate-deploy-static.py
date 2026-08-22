@@ -70,6 +70,13 @@ def main() -> int:
             "renderer CLI sha256 does not match host PDF",
             "PDF_METADATA=PASS",
         ],
+        "scripts/telegram-webhook.sh": [
+            "TELEGRAM_BOT_TOKEN is required",
+            "/webhook/telegram/invoice-bot-v2",
+            "Webhook URL must be HTTPS",
+            "Webhook URL must end with /webhook/telegram/invoice-bot-v2",
+            "set-webhook --url",
+        ],
     }
     for relative_path, fragments in script_expectations.items():
         content = (ROOT_DIR / relative_path).read_text()

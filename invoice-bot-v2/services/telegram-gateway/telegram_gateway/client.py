@@ -4,7 +4,7 @@ import re
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Sequence
 from urllib import error, request
 
 
@@ -41,10 +41,18 @@ class TelegramClient:
     def get_webhook_info(self) -> TelegramResult:
         return self._request_json("getWebhookInfo")
 
-    def set_webhook(self, webhook_url: str) -> TelegramResult:
+    def set_webhook(
+        self,
+        webhook_url: str,
+        drop_pending_updates: bool = True,
+        allowed_updates: Sequence[str] | None = ("message",),
+    ) -> TelegramResult:
         if not webhook_url or not webhook_url.startswith("https://"):
             raise ValueError("Telegram webhook URL must be HTTPS")
-        body = json.dumps({"url": webhook_url}).encode("utf-8")
+        body_payload = {"url": webhook_url, "drop_pending_updates": drop_pending_updates}
+        if allowed_updates is not None:
+            body_payload["allowed_updates"] = list(allowed_updates)
+        body = json.dumps(body_payload).encode("utf-8")
         return self._request_json("setWebhook", body, {"Content-Type": "application/json"})
 
     def delete_webhook(self) -> TelegramResult:

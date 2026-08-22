@@ -1,8 +1,10 @@
 import tempfile
 import unittest
+import json
 from pathlib import Path
 
 from telegram_gateway.client import TelegramClient, redact_url
+from telegram_gateway.cli import V2_N8N_WEBHOOK_PATH, validate_v2_webhook_url
 
 
 class TelegramClientTest(unittest.TestCase):
@@ -122,6 +124,9 @@ class TelegramClientTest(unittest.TestCase):
 
         self.assertIn("/setWebhook", calls[0][0])
         self.assertIn(b"https://example.com/webhook", calls[0][1])
+        body = json.loads(calls[0][1].decode("utf-8"))
+        self.assertEqual(body["allowed_updates"], ["message"])
+        self.assertTrue(body["drop_pending_updates"])
         self.assertEqual(calls[0][2]["Content-Type"], "application/json")
         self.assertIn("/getWebhookInfo", calls[1][0])
         self.assertIn("/deleteWebhook", calls[2][0])
@@ -134,6 +139,16 @@ class TelegramClientTest(unittest.TestCase):
         redacted = redact_url("https://api.telegram.org/bot123456:secret/sendDocument")
         self.assertNotIn("123456:secret", redacted)
         self.assertIn("[redacted-token]", redacted)
+
+    def test_v2_webhook_url_requires_expected_n8n_path(self):
+        validate_v2_webhook_url(f"https://example.trycloudflare.com{V2_N8N_WEBHOOK_PATH}")
+        validate_v2_webhook_url("https://example.trycloudflare.com/other", allow_non_v2_path=True)
+        with self.assertRaises(ValueError):
+            validate_v2_webhook_url("https://example.trycloudflare.com/other")
+        with self.assertRaises(ValueError):
+            validate_v2_webhook_url(f"http://example.trycloudflare.com{V2_N8N_WEBHOOK_PATH}")
+        with self.assertRaises(ValueError):
+            validate_v2_webhook_url(f"https://example.trycloudflare.com{V2_N8N_WEBHOOK_PATH} bad")
 
 
 if __name__ == "__main__":
