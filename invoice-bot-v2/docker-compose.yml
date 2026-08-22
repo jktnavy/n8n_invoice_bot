@@ -7,7 +7,7 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     ports:
-      - "3306:3306"
+      - "${MYSQL_PORT_PUBLISHED:-3307}:3306"
     volumes:
       - mysql-data:/var/lib/mysql
       - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
@@ -24,7 +24,7 @@ services:
     environment:
       INVOICE_OUTPUT_DIR: ${INVOICE_OUTPUT_DIR:-/data/invoices}
     ports:
-      - "8000:8000"
+      - "${INVOICE_RENDERER_PORT:-8000}:8000"
     volumes:
       - invoice-files:/data/invoices
     healthcheck:
@@ -48,7 +48,7 @@ services:
       N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
       GENERIC_TIMEZONE: Asia/Jakarta
     ports:
-      - "5678:5678"
+      - "${N8N_PORT:-5678}:5678"
     volumes:
       - n8n-data:/home/node/.n8n
       - invoice-files:/data/invoices

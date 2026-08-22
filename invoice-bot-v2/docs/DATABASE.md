@@ -34,3 +34,5 @@ COMMIT
 ```
 
 Do not use `SELECT MAX(invoice_number) + 1`.
+
+Runtime DB user should be scoped to `invoice_bot_v2`; see `database/create-runtime-user.example.sql`.

@@ -42,13 +42,15 @@ tests/                    Cross-service fixtures and scenarios
 
 ## Local Setup
 
-Local development uses Docker Compose for reproducibility:
+Local development can use Docker Compose for convenience:
 
 ```text
 mysql
 n8n
 invoice-renderer
 ```
+
+Host ports are configurable in `.env`. The default published MySQL port is `3307` to avoid colliding with a local MySQL/MariaDB on `3306`.
 
 Telegram local development uses webhook via Cloudflare Tunnel. Polling/manual trigger is reserved for selected tests.
 
