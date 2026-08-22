@@ -3,6 +3,7 @@ USE invoice_bot_v2;
 -- Parameters expected from n8n:
 -- :draft_id, :telegram_chat_id, :telegram_user_id, :customer_name,
 -- :payment_type, :subtotal, :discount, :additional_fee, :grand_total,
+-- :down_payment_amount, :balance_due,
 -- :included_text, :excluded_text, :notes, :raw_input, :parsed_payload,
 -- :content_fingerprint, :expires_at
 
@@ -18,6 +19,8 @@ INSERT INTO invoice_drafts (
   discount,
   additional_fee,
   grand_total,
+  down_payment_amount,
+  balance_due,
   included_text,
   excluded_text,
   notes,
@@ -36,6 +39,8 @@ INSERT INTO invoice_drafts (
   :discount,
   :additional_fee,
   :grand_total,
+  :down_payment_amount,
+  :balance_due,
   :included_text,
   :excluded_text,
   :notes,

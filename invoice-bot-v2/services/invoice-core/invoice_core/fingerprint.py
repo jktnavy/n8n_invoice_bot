@@ -36,6 +36,9 @@ def canonical_business_data(invoice: dict) -> dict:
     return {
         "customer": normalize_text(invoice.get("customer_name") or invoice.get("customer", {}).get("name")),
         "payment_type": normalize_enum(invoice.get("payment_type") or invoice.get("payment", {}).get("type")),
+        "down_payment_amount": canonical_int(
+            invoice.get("down_payment_amount") or invoice.get("payment", {}).get("down_payment_amount") or 0
+        ),
         "discount": canonical_int(invoice.get("discount", 0)),
         "additional_fee": canonical_int(invoice.get("additional_fee", 0)),
         "items": items,
@@ -65,4 +68,3 @@ def canonical_int(value) -> int:
         cleaned = cleaned.replace(".", "").replace(",", "")
         return int(Decimal(cleaned))
     return int(Decimal(str(value)))
-

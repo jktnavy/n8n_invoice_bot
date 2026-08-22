@@ -9,6 +9,8 @@
     "discount": "0",
     "additional_fee": "0",
     "grand_total": "10800000",
+    "down_payment_amount": "0",
+    "balance_due": "0",
     "included": ["kendaraan", "pengemudi", "BBM"],
     "excluded": ["tol", "parkir", "tips pengemudi"],
     "notes": null,
@@ -39,4 +41,3 @@
     ]
   }
 }
-

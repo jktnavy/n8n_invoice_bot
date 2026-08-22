@@ -8,6 +8,7 @@ SEQUENCE_EXAMPLE = (ROOT_DIR / "database" / "sequence-allocation.example.sql").r
 QUERY_DIR = ROOT_DIR / "database" / "queries"
 QUERY_TEMPLATES = "\n".join(path.read_text() for path in sorted(QUERY_DIR.glob("*.sql")))
 APPROVE_DRAFT_SQL = (QUERY_DIR / "approve-draft.sql").read_text()
+CREATE_DRAFT_SQL = (QUERY_DIR / "create-draft.sql").read_text()
 
 REQUIRED_TABLES = {
     "customers",
@@ -43,6 +44,20 @@ def main() -> int:
 
     if "target_chat_id" not in SCHEMA:
         raise SystemExit("invoice_deliveries must store target_chat_id")
+
+    for table in ["invoice_drafts", "invoices"]:
+        table_match = re.search(rf"CREATE\s+TABLE\s+{table}\s*\((.*?)\)\s+ENGINE", SCHEMA, re.IGNORECASE | re.DOTALL)
+        if not table_match:
+            raise SystemExit(f"{table} definition not found")
+        table_sql = table_match.group(1)
+        for column in ["down_payment_amount", "balance_due"]:
+            if column not in table_sql:
+                raise SystemExit(f"{table} must store {column}")
+
+    for query_name, query_sql in [("create-draft", CREATE_DRAFT_SQL), ("approve-draft", APPROVE_DRAFT_SQL)]:
+        for column in ["down_payment_amount", "balance_due"]:
+            if column not in query_sql:
+                raise SystemExit(f"{query_name} query must preserve {column}")
 
     if ":invoice_number" in APPROVE_DRAFT_SQL:
         raise SystemExit("approve-draft must not accept invoice_number as an input parameter")

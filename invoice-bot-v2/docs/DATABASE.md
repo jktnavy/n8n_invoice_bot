@@ -22,6 +22,10 @@ Invoice number allocation must happen inside a transaction using `invoice_sequen
 
 Drafts do not consume final invoice numbers.
 
+`invoice_drafts` and `invoices` store deterministic payment amounts:
+`down_payment_amount` and `balance_due`. The workflow recalculates these values
+from extracted payment intent and grand total before persistence.
+
 Sequence allocation strategy:
 
 ```text

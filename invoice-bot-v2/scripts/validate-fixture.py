@@ -28,6 +28,8 @@ def main() -> int:
         ],
         int(invoice.get("discount", 0)),
         int(invoice.get("additional_fee", 0)),
+        invoice.get("payment_type", "UNSPECIFIED"),
+        int(invoice.get("down_payment_amount", 0)),
     )
 
     assert calculated["items"][0]["line_total"] == 5_600_000
@@ -35,6 +37,8 @@ def main() -> int:
     assert calculated["grand_total"] == 10_800_000
     assert int(invoice["subtotal"]) == calculated["subtotal"]
     assert int(invoice["grand_total"]) == calculated["grand_total"]
+    assert int(invoice["down_payment_amount"]) == calculated["down_payment_amount"]
+    assert int(invoice["balance_due"]) == calculated["balance_due"]
 
     fingerprint = content_fingerprint(invoice)
     print(json.dumps({"fixture": "pt-nusa", "grand_total": calculated["grand_total"], "fingerprint": fingerprint}, sort_keys=True))
@@ -43,4 +47,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

@@ -120,6 +120,12 @@
           <div class="label">Total Tagihan</div>
           <div class="amount">{{ grand_total }}</div>
         </div>
+        {% if invoice.down_payment_amount %}
+          <div class="words">DP diterima: {{ rupiah(invoice.down_payment_amount) }}</div>
+        {% endif %}
+        {% if invoice.balance_due %}
+          <div class="words">Sisa pembayaran: {{ rupiah(invoice.balance_due) }}</div>
+        {% endif %}
         <div class="words">Terbilang: {{ amount_words }}</div>
       </div>
     </section>
@@ -143,4 +149,3 @@
   </main>
 </body>
 </html>
-

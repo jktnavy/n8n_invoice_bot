@@ -17,6 +17,8 @@ REQUIRED_INVOICE_FIELDS = {
     "discount",
     "additional_fee",
     "grand_total",
+    "down_payment_amount",
+    "balance_due",
     "items",
 }
 
@@ -90,12 +92,19 @@ def validate_invoice_payload(invoice: dict) -> list[str]:
     discount = decimal(invoice.get("discount", "0"))
     additional_fee = decimal(invoice.get("additional_fee", "0"))
     grand_total = decimal(invoice.get("grand_total", "0"))
+    down_payment_amount = decimal(invoice.get("down_payment_amount", "0"))
+    balance_due = decimal(invoice.get("balance_due", "0"))
 
     if subtotal != calculated_subtotal:
         failures.append(f"fixture subtotal expected {calculated_subtotal}")
     expected_grand_total = subtotal - discount + additional_fee
     if grand_total != expected_grand_total:
         failures.append(f"fixture grand_total expected {expected_grand_total}")
+    if down_payment_amount > grand_total:
+        failures.append("fixture down_payment_amount must not exceed grand_total")
+    expected_balance = Decimal("0") if invoice.get("payment_type") == "FULL_PAYMENT" else grand_total - down_payment_amount
+    if balance_due != expected_balance:
+        failures.append(f"fixture balance_due expected {expected_balance}")
 
     return failures
 

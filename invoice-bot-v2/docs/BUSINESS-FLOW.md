@@ -9,6 +9,7 @@ Telegram message
 -> validate schema
 -> validate business fields
 -> calculate totals
+-> calculate payment balance
 -> fingerprint content
 -> check duplicate
 -> save draft
@@ -34,5 +35,12 @@ approval message
 ## Revision
 
 Revisions update the active draft only. They must recalculate totals and send a new preview. They must not create final invoices.
+
+## Payment
+
+`DOWN_PAYMENT` stores the accepted DP amount and recalculates `balance_due`
+from the full invoice total. `FULL_PAYMENT` always has zero balance due. These
+amounts are calculated by the deterministic workflow and persisted with the
+draft and final invoice.
 
 The offline workflow simulator in `services/workflow-sim` is an executable contract for these flows. n8n implementation should preserve the same observable behavior.

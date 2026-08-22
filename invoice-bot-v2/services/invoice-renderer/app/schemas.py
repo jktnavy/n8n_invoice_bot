@@ -52,6 +52,8 @@ class InvoicePayload(BaseModel):
     discount: Decimal = Field(default=Decimal("0"), ge=0)
     additional_fee: Decimal = Field(default=Decimal("0"), ge=0)
     grand_total: Decimal = Field(ge=0)
+    down_payment_amount: Decimal = Field(default=Decimal("0"), ge=0)
+    balance_due: Decimal = Field(default=Decimal("0"), ge=0)
     included: list[str] = Field(default_factory=list)
     excluded: list[str] = Field(default_factory=list)
     notes: str | None = None
@@ -72,6 +74,13 @@ class InvoicePayload(BaseModel):
         expected_grand_total = self.subtotal - self.discount + self.additional_fee
         if self.grand_total != expected_grand_total:
             raise ValueError(f"grand_total must equal subtotal - discount + additional_fee, expected {expected_grand_total}")
+        if self.down_payment_amount > self.grand_total:
+            raise ValueError("down_payment_amount must not exceed grand_total")
+        if self.payment_type == "FULL_PAYMENT" and self.down_payment_amount != 0:
+            raise ValueError("down_payment_amount must be zero for FULL_PAYMENT")
+        expected_balance = Decimal("0") if self.payment_type == "FULL_PAYMENT" else self.grand_total - self.down_payment_amount
+        if self.balance_due != expected_balance:
+            raise ValueError(f"balance_due must match payment type and down payment, expected {expected_balance}")
         return self
 
 
@@ -84,4 +93,3 @@ class RenderInvoiceResponse(BaseModel):
     file_path: str
     sha256: str
     size: int
-

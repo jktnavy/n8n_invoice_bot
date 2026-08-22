@@ -29,6 +29,12 @@ lines.push(rupiah($json.grand_total));
 lines.push('');
 lines.push('Pembayaran:');
 lines.push($json.payment_type === 'FULL_PAYMENT' ? 'LUNAS / FULL PAYMENT' : $json.payment_type);
+if ($json.down_payment_amount) {
+  lines.push(`DP: ${rupiah($json.down_payment_amount)}`);
+}
+if ($json.balance_due) {
+  lines.push(`Sisa pembayaran: ${rupiah($json.balance_due)}`);
+}
 
 if (($json.included || []).length) {
   lines.push('');
@@ -47,4 +53,3 @@ lines.push('Sudah benar?');
 lines.push('Balas: setuju atau tulis revisinya.');
 
 return [{ json: { ...$json, preview_text: lines.join('\n') } }];
-

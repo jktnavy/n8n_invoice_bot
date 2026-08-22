@@ -25,6 +25,8 @@ class MockProvider:
         text = _normalize(message)
         if "pt nusa" not in text:
             return _empty_invoice(["customer.name", "items.trip_date", "items.quantity", "items.unit_price"])
+        payment_type = "DOWN_PAYMENT" if "dp" in text and "tanpa dp" not in text else "FULL_PAYMENT"
+        down_payment_amount = 1000000 if payment_type == "DOWN_PAYMENT" else None
         return {
             "schema_version": "invoice-draft.v1",
             "customer": {"name": "PT Nusa Horizon Wisata" if "horizon" in text else "PT Nusa"},
@@ -46,7 +48,7 @@ class MockProvider:
                     "unit_price": 2600000,
                 },
             ],
-            "payment": {"type": "FULL_PAYMENT", "down_payment_amount": None},
+            "payment": {"type": payment_type, "down_payment_amount": down_payment_amount},
             "notes": {
                 "included": ["kendaraan", "pengemudi", "BBM"],
                 "excluded": ["tol", "parkir", "tips pengemudi"],
@@ -78,4 +80,3 @@ def _empty_invoice(missing_fields: list[str]) -> dict:
         "notes": {"included": [], "excluded": [], "free_text": None},
         "missing_fields": missing_fields,
     }
-

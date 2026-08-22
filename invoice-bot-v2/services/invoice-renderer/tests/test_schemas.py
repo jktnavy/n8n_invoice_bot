@@ -16,6 +16,8 @@ def payload():
         "discount": "0",
         "additional_fee": "0",
         "grand_total": "10800000",
+        "down_payment_amount": "0",
+        "balance_due": "0",
         "included": ["kendaraan", "pengemudi", "BBM"],
         "excluded": ["tol", "parkir", "tips pengemudi"],
         "items": [
@@ -56,3 +58,18 @@ def test_invoice_payload_rejects_wrong_total():
     with pytest.raises(ValidationError):
         InvoicePayload.model_validate(invalid)
 
+
+def test_invoice_payload_rejects_wrong_balance_due():
+    invalid = payload()
+    invalid["payment_type"] = "DOWN_PAYMENT"
+    invalid["down_payment_amount"] = "1000000"
+    invalid["balance_due"] = "1"
+    with pytest.raises(ValidationError):
+        InvoicePayload.model_validate(invalid)
+
+
+def test_invoice_payload_rejects_down_payment_on_full_payment():
+    invalid = payload()
+    invalid["down_payment_amount"] = "1000000"
+    with pytest.raises(ValidationError):
+        InvoicePayload.model_validate(invalid)

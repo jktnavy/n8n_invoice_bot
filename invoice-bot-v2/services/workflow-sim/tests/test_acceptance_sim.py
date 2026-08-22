@@ -11,6 +11,10 @@ SECOND_CREATE_MESSAGE = (
     "Buat invoice PT Nusa, 2 medium tanggal 15 Harapan Indah ke Puncak "
     "2,8 juta per unit, tanggal 17 Puncak Jakarta 2,6 juta. Lunas tanpa DP."
 )
+DP_CREATE_MESSAGE = (
+    "Buat invoice PT Nusa Horizon, 2 medium tanggal 15 Harapan Indah ke Puncak "
+    "2,8 juta per unit, tanggal 17 Puncak Jakarta 2,6 juta. DP 1 juta."
+)
 
 
 class AcceptanceSimulatorTest(unittest.TestCase):
@@ -103,6 +107,22 @@ class AcceptanceSimulatorTest(unittest.TestCase):
         self.assertEqual(second["invoice_number"], "INV-0002/STA/VIII/2026")
         self.assertEqual(bot.store.sequence_last_number, 2)
         self.assertEqual(len(bot.store.invoices), 2)
+
+    def test_scenario_d_payment_down_payment_tracks_balance_due(self):
+        bot = InvoiceBotSimulator()
+
+        preview = bot.handle_message("chat-1", "user-1", DP_CREATE_MESSAGE)
+        draft = bot.store.drafts[preview["draft_id"]]
+        self.assertEqual(preview["type"], "PREVIEW")
+        self.assertEqual(draft["payment_type"], "DOWN_PAYMENT")
+        self.assertEqual(draft["down_payment_amount"], 1_000_000)
+        self.assertEqual(draft["balance_due"], 9_800_000)
+
+        approved = bot.handle_message("chat-1", "user-1", "setuju")
+        invoice = bot.store.invoices[approved["invoice_id"]]
+        self.assertEqual(invoice["payment_type"], "DOWN_PAYMENT")
+        self.assertEqual(invoice["down_payment_amount"], 1_000_000)
+        self.assertEqual(invoice["balance_due"], 9_800_000)
 
 
 if __name__ == "__main__":

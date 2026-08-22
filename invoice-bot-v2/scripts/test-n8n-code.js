@@ -39,6 +39,16 @@ const calculated = runSnippet('n8n/code/calculate-invoice.js', invoice)[0].json;
 assert.strictEqual(calculated.items[0].line_total, 5600000);
 assert.strictEqual(calculated.items[1].line_total, 5200000);
 assert.strictEqual(calculated.grand_total, 10800000);
+assert.strictEqual(calculated.balance_due, 0);
+
+const downPayment = runSnippet('n8n/code/calculate-invoice.js', {
+  ...invoice,
+  payment_type: 'DOWN_PAYMENT',
+  down_payment_amount: 1000000,
+})[0].json;
+assert.strictEqual(downPayment.grand_total, 10800000);
+assert.strictEqual(downPayment.down_payment_amount, 1000000);
+assert.strictEqual(downPayment.balance_due, 9800000);
 
 const fingerprintA = runSnippet('n8n/code/content-fingerprint.js', calculated)[0].json.content_fingerprint;
 const fingerprintB = runSnippet('n8n/code/content-fingerprint.js', {
@@ -72,6 +82,10 @@ const preview = runSnippet('n8n/code/render-preview.js', {
 })[0].json.preview_text;
 assert.match(preview, /PRATINJAU INVOICE/);
 assert.match(preview, /Rp10\.800\.000/);
+
+const paymentPreview = runSnippet('n8n/code/render-preview.js', downPayment)[0].json.preview_text;
+assert.match(paymentPreview, /DP: Rp1\.000\.000/);
+assert.match(paymentPreview, /Sisa pembayaran: Rp9\.800\.000/);
 
 const delivery = runSnippet('n8n/code/telegram-delivery-result.js', {
   telegram_response: { ok: true, result: { message_id: 12345 } },

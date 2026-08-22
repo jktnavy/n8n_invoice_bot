@@ -18,6 +18,7 @@ function canonicalInt(value) {
 const canonical = {
   customer: normalizeText($json.customer_name || $json.customer?.name),
   payment_type: String($json.payment_type || $json.payment?.type || '').trim().toUpperCase(),
+  down_payment_amount: canonicalInt($json.down_payment_amount || $json.payment?.down_payment_amount || 0),
   discount: canonicalInt($json.discount || 0),
   additional_fee: canonicalInt($json.additional_fee || 0),
   items: ($json.items || []).map((item) => ({

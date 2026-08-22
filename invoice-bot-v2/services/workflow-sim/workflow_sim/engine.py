@@ -131,13 +131,15 @@ class InvoiceBotSimulator:
             )
             for item in extracted["items"]
         ]
-        totals = calculate_invoice_totals(item_inputs)
+        payment_type = extracted["payment"]["type"]
+        down_payment_amount = int(extracted["payment"].get("down_payment_amount") or 0)
+        totals = calculate_invoice_totals(item_inputs, payment_type=payment_type, down_payment_amount=down_payment_amount)
         draft = {
             "id": str(uuid4()),
             "telegram_chat_id": chat_id,
             "telegram_user_id": user_id,
             "customer_name": extracted["customer"]["name"],
-            "payment_type": extracted["payment"]["type"],
+            "payment_type": payment_type,
             "included": extracted["notes"]["included"],
             "excluded": extracted["notes"]["excluded"],
             "notes": extracted["notes"]["free_text"],
@@ -160,7 +162,11 @@ class InvoiceBotSimulator:
             )
             for item in draft["items"]
         ]
-        totals = calculate_invoice_totals(item_inputs)
+        totals = calculate_invoice_totals(
+            item_inputs,
+            payment_type=draft["payment_type"],
+            down_payment_amount=int(draft.get("down_payment_amount") or 0),
+        )
         draft.update(totals)
         draft["content_fingerprint"] = content_fingerprint(draft)
 
@@ -179,6 +185,8 @@ class InvoiceBotSimulator:
             "discount": draft["discount"],
             "additional_fee": draft["additional_fee"],
             "grand_total": draft["grand_total"],
+            "down_payment_amount": draft["down_payment_amount"],
+            "balance_due": draft["balance_due"],
             "content_fingerprint": draft["content_fingerprint"],
             "source_draft_id": draft["id"],
             "pdf_path": f"/data/invoices/INV-{self.store.sequence_last_number:04d}.pdf",
@@ -227,4 +235,3 @@ class InvoiceBotSimulator:
             ):
                 return draft
         return None
-
