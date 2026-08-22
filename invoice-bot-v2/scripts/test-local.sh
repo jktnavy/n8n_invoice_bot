@@ -14,6 +14,9 @@ PYTHONPATH="$ROOT_DIR/services/llm-parser" \
 PYTHONPATH="$ROOT_DIR/services/invoice-core:$ROOT_DIR/services/llm-parser:$ROOT_DIR/services/workflow-sim" \
   python3 -m unittest discover -s "$ROOT_DIR/services/workflow-sim/tests" -v
 
+PYTHONPATH="$ROOT_DIR/services/telegram-gateway" \
+  python3 -m unittest discover -s "$ROOT_DIR/services/telegram-gateway/tests" -v
+
 python3 "$ROOT_DIR/scripts/validate-fixture.py"
 python3 "$ROOT_DIR/scripts/validate-schema-static.py"
 python3 "$ROOT_DIR/scripts/sync-n8n-code.py" --check

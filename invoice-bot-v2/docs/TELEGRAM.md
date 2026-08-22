@@ -26,3 +26,15 @@ Delivery destination column:
 ```text
 target_chat_id
 ```
+
+The dependency-free Telegram gateway client in `services/telegram-gateway` maps `sendDocument` responses into DB-ready delivery metadata:
+
+```text
+delivery_status
+provider_message_id
+provider_error_code
+provider_error_message
+provider_response
+```
+
+It rejects missing `chat_id` before making a request and does not decide retries or create invoices.
