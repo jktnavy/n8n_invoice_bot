@@ -39,6 +39,8 @@ FORBIDDEN_RENDERER_PATTERNS = {
     "sql_query": re.compile(r"\b(SELECT|INSERT|UPDATE|DELETE)\s+.+\bFROM\b", re.IGNORECASE),
 }
 
+INVOICE_NUMBER_PATTERN = re.compile(r"^INV-\d{4}/STA/(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII)/\d{4}$")
+
 
 def main() -> int:
     failures = []
@@ -68,6 +70,8 @@ def validate_invoice_payload(invoice: dict) -> list[str]:
     missing = sorted(REQUIRED_INVOICE_FIELDS - set(invoice))
     if missing:
         failures.append("fixture invoice missing fields: " + ",".join(missing))
+    if not INVOICE_NUMBER_PATTERN.match(str(invoice.get("invoice_number", ""))):
+        failures.append("fixture invoice_number must use INV-XXXX/STA/ROMAN/YYYY")
 
     items = invoice.get("items")
     if not isinstance(items, list) or not items:
@@ -131,6 +135,7 @@ def validate_n8n_renderer_handoff_contract() -> list[str]:
         "FULL_VALIDATED_INVOICE_PAYLOAD",
         "delivery_payload_ready",
         "target_chat_id",
+        "invoice_number has invalid format",
     ]:
         if required_fragment not in text:
             failures.append(f"{PREPARE_RENDER_SNIPPET.relative_to(ROOT_DIR)} missing {required_fragment}")

@@ -5,6 +5,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 PaymentType = Literal["FULL_PAYMENT", "DOWN_PAYMENT", "BALANCE_PAYMENT", "UNSPECIFIED"]
+INVOICE_NUMBER_PATTERN = r"^INV-\d{4}/STA/(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII)/\d{4}$"
 
 
 class InvoiceItem(BaseModel):
@@ -44,7 +45,7 @@ class InvoicePayload(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
     invoice_id: int | None = None
-    invoice_number: str = Field(min_length=1, max_length=50)
+    invoice_number: str = Field(min_length=1, max_length=50, pattern=INVOICE_NUMBER_PATTERN)
     invoice_date: date
     customer_name: str = Field(min_length=1, max_length=255)
     payment_type: PaymentType

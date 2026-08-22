@@ -70,5 +70,7 @@ def sha256_file(path: Path) -> str:
 
 
 def safe_filename(value: str) -> str:
-    return re.sub(r"[^A-Za-z0-9._-]+", "-", value).strip("-")
-
+    filename = re.sub(r"[^A-Za-z0-9._-]+", "-", value).strip("-")
+    if not filename:
+        raise ValueError("invoice_number did not produce a safe filename")
+    return filename

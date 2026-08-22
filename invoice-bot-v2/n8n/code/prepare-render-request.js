@@ -27,6 +27,9 @@ if (!Array.isArray(invoice.items) || invoice.items.length === 0) {
 if (!targetChatId) {
   throw new Error('target_chat_id is required for Telegram delivery');
 }
+if (!/^INV-\d{4}\/STA\/(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII)\/\d{4}$/.test(String(invoice.invoice_number))) {
+  throw new Error('approved invoice invoice_number has invalid format');
+}
 
 let subtotal = 0;
 const items = invoice.items.map((item, index) => {

@@ -73,3 +73,10 @@ def test_invoice_payload_rejects_down_payment_on_full_payment():
     invalid["down_payment_amount"] = "1000000"
     with pytest.raises(ValidationError):
         InvoicePayload.model_validate(invalid)
+
+
+def test_invoice_payload_rejects_invalid_invoice_number_format():
+    invalid = payload()
+    invalid["invoice_number"] = "../../invoice.pdf"
+    with pytest.raises(ValidationError):
+        InvoicePayload.model_validate(invalid)

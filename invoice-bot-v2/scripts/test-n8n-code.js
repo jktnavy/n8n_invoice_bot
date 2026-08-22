@@ -184,6 +184,13 @@ assert.strictEqual(renderHandoff.renderer_contract, 'FULL_VALIDATED_INVOICE_PAYL
 assert.strictEqual(renderHandoff.target_chat_id, '123456');
 assert.strictEqual(renderHandoff.render_request.invoice.invoice_number, 'INV-0001/STA/VIII/2026');
 assert.strictEqual(renderHandoff.render_request.invoice.status_label, 'LUNAS');
+assert.throws(
+  () => runSnippet('n8n/code/prepare-render-request.js', {
+    invoice: { ...approvedInvoice, invoice_number: '../../invoice.pdf' },
+    telegram_chat_id: '123456',
+  }),
+  /invoice_number has invalid format/,
+);
 
 const telegramDocument = runSnippet('n8n/code/prepare-telegram-document.js', {
   invoice_id: 1,
