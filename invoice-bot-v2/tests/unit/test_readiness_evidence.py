@@ -20,6 +20,19 @@ record_evidence = load_script("record_readiness_evidence", "scripts/record-readi
 
 
 class ReadinessEvidenceTest(unittest.TestCase):
+    def test_gate_contracts_match_between_validator_recorder_and_template(self):
+        template = json.loads((ROOT_DIR / "docs" / "readiness-evidence.example.json").read_text())
+
+        self.assertEqual(record_evidence.RUNTIME_GATES, readiness_gate.RUNTIME_GATES)
+        self.assertEqual(record_evidence.EXPECTED_GATE_COMMAND_FRAGMENTS, readiness_gate.EXPECTED_GATE_COMMAND_FRAGMENTS)
+        self.assertEqual(template["schema_version"], readiness_gate.EVIDENCE_SCHEMA_VERSION)
+        self.assertEqual(sorted(template["gates"]), sorted(readiness_gate.RUNTIME_GATES))
+
+        for gate, fragments in readiness_gate.EXPECTED_GATE_COMMAND_FRAGMENTS.items():
+            command = template["gates"][gate]["command"]
+            for fragment in fragments:
+                self.assertIn(fragment, command)
+
     def test_missing_evidence_is_not_invalid(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             result = readiness_gate.validate_runtime_evidence(Path(tmpdir) / "missing.json")
