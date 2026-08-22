@@ -18,6 +18,17 @@ check_command() {
   fi
 }
 
+check_docker() {
+  if command -v docker >/dev/null 2>&1; then
+    printf 'DOCKER_AVAILABLE=YES\n'
+    docker --version
+    docker compose version
+  else
+    printf 'DOCKER_AVAILABLE=NO\n'
+    printf 'DOCKER_REQUIRED=Install Docker Desktop and enable WSL integration for this distro, then rerun docker --version and docker compose version.\n'
+  fi
+}
+
 check_port() {
   local port="$1"
   if ss -lnt "( sport = :$port )" | grep -q ":$port"; then
@@ -28,6 +39,7 @@ check_port() {
 }
 
 check_command docker
+check_docker
 check_command python3
 check_command node
 check_command mysql

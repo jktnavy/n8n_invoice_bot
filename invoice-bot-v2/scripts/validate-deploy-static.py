@@ -68,6 +68,14 @@ def main() -> int:
             "Usage: $0 [auto|native|compose]",
             "exit \"$FAILED\"",
         ],
+        "scripts/preflight-readiness.sh": [
+            "DOCKER_AVAILABLE=YES",
+            "DOCKER_AVAILABLE=NO",
+            "docker --version",
+            "docker compose version",
+            "Docker Desktop",
+            "WSL integration",
+        ],
         "scripts/migrate.sh": [
             "MODE=\"${1:-auto}\"",
             "MYSQL_MIGRATION_USER",
