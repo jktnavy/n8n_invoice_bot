@@ -56,6 +56,8 @@ def main() -> int:
     for secret_key in ["MYSQL_PASSWORD", "N8N_ENCRYPTION_KEY", "TELEGRAM_BOT_TOKEN", "LLM_API_KEY"]:
         if native_env.get(secret_key, ""):
             failures.append(f"native.env.example: {secret_key} must be blank")
+    if native_env.get("LLM_BASE_URL", ""):
+        failures.append("native.env.example: LLM_BASE_URL must be blank")
 
     script_expectations = {
         "scripts/healthcheck.sh": ["MODE=\"${1:-auto}\"", "mysqladmin ping", "docker compose exec -T mysql", "Usage: $0 [auto|native|compose]", "exit \"$FAILED\""],

@@ -19,6 +19,7 @@ class ProviderConfig:
     provider: str
     model: str
     api_key: str
+    base_url: str = ""
 
 
 def provider_from_env() -> LLMProvider:
@@ -26,6 +27,7 @@ def provider_from_env() -> LLMProvider:
         provider=os.environ.get("LLM_PROVIDER", "openai").strip().lower(),
         model=os.environ.get("LLM_MODEL", "").strip(),
         api_key=os.environ.get("LLM_API_KEY", "").strip(),
+        base_url=os.environ.get("LLM_BASE_URL", "").strip(),
     )
     if config.provider == "mock":
         from .mock_provider import MockProvider
@@ -35,7 +37,13 @@ def provider_from_env() -> LLMProvider:
         from .openai_provider import OpenAIProvider
 
         return OpenAIProvider(config)
-    if config.provider in {"deepseek", "gemini", "openrouter"}:
+    if config.provider in {"deepseek", "openrouter"}:
+        if not config.base_url:
+            raise ValueError(f"LLM_BASE_URL is required for {config.provider} provider")
+        from .openai_provider import OpenAIProvider
+
+        return OpenAIProvider(config)
+    if config.provider == "gemini":
         return NotImplementedProvider(config)
     raise ValueError(f"Unsupported LLM_PROVIDER: {config.provider}")
 

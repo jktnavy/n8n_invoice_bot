@@ -27,4 +27,13 @@ OpenAI provider implementation:
 - Uses only stdlib HTTP so host-safe tests do not require SDK installation.
 - Requires `LLM_API_KEY` and `LLM_MODEL` at runtime.
 
+Provider switching:
+
+- `LLM_PROVIDER=openai` uses the default OpenAI Responses endpoint.
+- `LLM_PROVIDER=deepseek` or `LLM_PROVIDER=openrouter` uses the same
+  Responses-compatible adapter and requires `LLM_BASE_URL` to be set to that
+  provider's compatible `/responses` endpoint.
+- `LLM_PROVIDER=gemini` is reserved behind the same interface but intentionally
+  not enabled until a provider-specific structured output adapter is added.
+
 This follows the official OpenAI Structured Outputs guidance: Structured Outputs are recommended over JSON mode when possible because they enforce schema adherence, and the Responses API supports schema-constrained output with `text.format`.

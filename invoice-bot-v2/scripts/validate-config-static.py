@@ -21,6 +21,7 @@ REQUIRED_ENV_KEYS = {
     "LLM_PROVIDER": "openai",
     "LLM_MODEL": "",
     "LLM_API_KEY": "",
+    "LLM_BASE_URL": "",
     "INVOICE_RENDERER_URL": "http://invoice-renderer:8000",
     "INVOICE_RENDERER_HOST": "127.0.0.1",
     "INVOICE_RENDERER_PORT": "8000",

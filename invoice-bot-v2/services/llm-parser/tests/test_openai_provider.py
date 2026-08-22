@@ -1,19 +1,74 @@
 import unittest
 
 from llm_parser.openai_provider import OpenAIProvider, _parse_structured_response, _validate_structured_payload
-from llm_parser.providers import ProviderConfig, provider_from_env
+from llm_parser.providers import NotImplementedProvider, ProviderConfig, provider_from_env
 
 
 class OpenAIProviderTest(unittest.TestCase):
     def test_provider_from_env_returns_openai_provider(self):
         import os
 
-        previous = {key: os.environ.get(key) for key in ["LLM_PROVIDER", "LLM_MODEL", "LLM_API_KEY"]}
+        previous = {key: os.environ.get(key) for key in ["LLM_PROVIDER", "LLM_MODEL", "LLM_API_KEY", "LLM_BASE_URL"]}
         try:
             os.environ["LLM_PROVIDER"] = "openai"
             os.environ["LLM_MODEL"] = "gpt-test"
             os.environ["LLM_API_KEY"] = "test-key"
+            os.environ.pop("LLM_BASE_URL", None)
             self.assertIsInstance(provider_from_env(), OpenAIProvider)
+        finally:
+            for key, value in previous.items():
+                if value is None:
+                    os.environ.pop(key, None)
+                else:
+                    os.environ[key] = value
+
+    def test_openai_compatible_provider_uses_configured_base_url(self):
+        import os
+
+        previous = {key: os.environ.get(key) for key in ["LLM_PROVIDER", "LLM_MODEL", "LLM_API_KEY", "LLM_BASE_URL"]}
+        try:
+            os.environ["LLM_PROVIDER"] = "openrouter"
+            os.environ["LLM_MODEL"] = "test-model"
+            os.environ["LLM_API_KEY"] = "test-key"
+            os.environ["LLM_BASE_URL"] = "https://llm.example.test/v1/responses"
+            provider = provider_from_env()
+            self.assertIsInstance(provider, OpenAIProvider)
+            self.assertEqual(provider.base_url, "https://llm.example.test/v1/responses")
+        finally:
+            for key, value in previous.items():
+                if value is None:
+                    os.environ.pop(key, None)
+                else:
+                    os.environ[key] = value
+
+    def test_openai_compatible_provider_requires_base_url(self):
+        import os
+
+        previous = {key: os.environ.get(key) for key in ["LLM_PROVIDER", "LLM_MODEL", "LLM_API_KEY", "LLM_BASE_URL"]}
+        try:
+            os.environ["LLM_PROVIDER"] = "deepseek"
+            os.environ["LLM_MODEL"] = "test-model"
+            os.environ["LLM_API_KEY"] = "test-key"
+            os.environ.pop("LLM_BASE_URL", None)
+            with self.assertRaises(ValueError):
+                provider_from_env()
+        finally:
+            for key, value in previous.items():
+                if value is None:
+                    os.environ.pop(key, None)
+                else:
+                    os.environ[key] = value
+
+    def test_gemini_remains_reserved_provider(self):
+        import os
+
+        previous = {key: os.environ.get(key) for key in ["LLM_PROVIDER", "LLM_MODEL", "LLM_API_KEY", "LLM_BASE_URL"]}
+        try:
+            os.environ["LLM_PROVIDER"] = "gemini"
+            os.environ["LLM_MODEL"] = "test-model"
+            os.environ["LLM_API_KEY"] = "test-key"
+            os.environ["LLM_BASE_URL"] = "https://unused.example.test"
+            self.assertIsInstance(provider_from_env(), NotImplementedProvider)
         finally:
             for key, value in previous.items():
                 if value is None:

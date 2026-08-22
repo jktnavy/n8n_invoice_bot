@@ -17,7 +17,7 @@ class OpenAIProvider:
         base_url: str = "https://api.openai.com/v1/responses",
     ):
         self.config = config
-        self.base_url = base_url
+        self.base_url = config.base_url or base_url
         self.transport = transport or self._default_transport
 
     def classify_intent(self, message: str) -> dict:
