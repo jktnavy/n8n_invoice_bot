@@ -55,6 +55,7 @@ def main() -> int:
 
     assert_no_secret_like_value(args.command, "command")
     assert_no_secret_like_value(args.evidence, "evidence")
+    assert_no_secret_like_value(args.environment, "environment")
     validate_gate_command(args.gate, args.command)
 
     payload = load_or_initialize_payload(args.file, args.template, args.environment)

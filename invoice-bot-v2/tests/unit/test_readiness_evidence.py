@@ -145,6 +145,13 @@ class ReadinessEvidenceTest(unittest.TestCase):
                 "command",
             )
 
+    def test_recorder_rejects_secret_like_environment(self):
+        with self.assertRaises(SystemExit):
+            record_evidence.assert_no_secret_like_value(
+                "staging token=should-not-be-here",
+                "environment",
+            )
+
     def test_recorder_rejects_existing_evidence_file_with_secret_like_value(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             evidence = Path(tmpdir) / "readiness-evidence.json"
