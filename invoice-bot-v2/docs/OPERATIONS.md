@@ -42,6 +42,16 @@ Recommended native services:
 
 Renderer should bind to `127.0.0.1`. n8n should be behind the existing reverse proxy only after collision checks.
 
+Runtime healthcheck:
+
+```bash
+./scripts/healthcheck.sh
+```
+
+The LLM provider check runs the deterministic mock provider when
+`LLM_PROVIDER=mock`. For live providers it skips safely until both
+`LLM_API_KEY` and `LLM_MODEL` are present.
+
 ## Logs
 
 Recommended:

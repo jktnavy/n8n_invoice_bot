@@ -34,8 +34,12 @@ else
   printf '%-18s SKIP\n' "Telegram getMe"
 fi
 
-if [[ -n "${LLM_API_KEY:-}" ]]; then
-  printf '%-18s TODO\n' "LLM Provider"
+if PYTHONPATH="$ROOT_DIR/services/llm-parser" python3 -m llm_parser.cli healthcheck >/dev/null 2>&1; then
+  if [[ "${LLM_PROVIDER:-openai}" != "mock" && ( -z "${LLM_API_KEY:-}" || -z "${LLM_MODEL:-}" ) ]]; then
+    printf '%-18s SKIP\n' "LLM Provider"
+  else
+    printf '%-18s PASS\n' "LLM Provider"
+  fi
 else
-  printf '%-18s SKIP\n' "LLM Provider"
+  printf '%-18s FAIL\n' "LLM Provider"
 fi
