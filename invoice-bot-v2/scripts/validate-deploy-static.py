@@ -7,6 +7,7 @@ SYSTEMD_FILES = [
     ROOT_DIR / "deploy" / "systemd" / "invoice-renderer.service",
     ROOT_DIR / "deploy" / "systemd" / "n8n-invoice-bot-v2.service",
 ]
+LIVE_ACCEPTANCE_RUNBOOK = ROOT_DIR / "docs" / "LIVE-ACCEPTANCE-RUNBOOK.md"
 
 FORBIDDEN_SYSTEMD_FRAGMENTS = [
     "User=root",
@@ -58,6 +59,23 @@ def main() -> int:
             failures.append(f"native.env.example: {secret_key} must be blank")
     if native_env.get("LLM_BASE_URL", ""):
         failures.append("native.env.example: LLM_BASE_URL must be blank")
+
+    if not LIVE_ACCEPTANCE_RUNBOOK.exists():
+        failures.append("missing live acceptance runbook: docs/LIVE-ACCEPTANCE-RUNBOOK.md")
+    else:
+        runbook = LIVE_ACCEPTANCE_RUNBOOK.read_text()
+        for fragment in [
+            "Scenario A",
+            "Scenario B",
+            "Scenario C",
+            "Scenario D",
+            "Scenario E",
+            "manual Telegram scenario A-E runbook",
+            "--gate live_acceptance",
+            "/webhook/telegram/invoice-bot-v2",
+        ]:
+            if fragment not in runbook:
+                failures.append(f"LIVE-ACCEPTANCE-RUNBOOK.md: missing {fragment!r}")
 
     script_expectations = {
         "scripts/healthcheck.sh": [

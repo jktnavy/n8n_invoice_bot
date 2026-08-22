@@ -100,6 +100,8 @@ Because GitHub may reject workflow-file pushes from tokens without `workflow` sc
 - duplicate detection
 - ambiguous request asks for missing data
 
+Live Telegram acceptance uses `docs/LIVE-ACCEPTANCE-RUNBOOK.md`.
+
 Offline acceptance simulator:
 
 ```bash
