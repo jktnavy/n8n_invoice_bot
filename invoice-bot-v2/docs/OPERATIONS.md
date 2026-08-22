@@ -52,6 +52,8 @@ Record one verified gate after a successful runtime check:
 
 `V2_READY=YES` is reported only when every runtime gate is marked verified with
 timestamp, command, and evidence text.
+Invalid evidence, secret-like values, or a command that does not match the
+selected gate make `readiness-gate.py` exit non-zero.
 
 ## Runtime Services
 

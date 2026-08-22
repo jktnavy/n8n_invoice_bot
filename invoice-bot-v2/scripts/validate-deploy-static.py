@@ -96,8 +96,14 @@ def main() -> int:
             "choices=RUNTIME_GATES",
             "assert_no_secret_like_value(args.command, \"command\")",
             "assert_no_secret_like_value(args.evidence, \"evidence\")",
+            "validate_gate_command(args.gate, args.command)",
             "READINESS_EVIDENCE_UPDATED",
             "GATE_VERIFIED",
+        ],
+        "scripts/readiness-gate.py": [
+            "EXPECTED_GATE_COMMAND_FRAGMENTS",
+            "return 1 if evidence_result[\"status\"] == \"invalid\" else 0",
+            "command must include",
         ],
     }
     for relative_path, fragments in script_expectations.items():

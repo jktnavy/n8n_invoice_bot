@@ -22,6 +22,18 @@ RUNTIME_GATES = [
     "production_regression",
 ]
 
+EXPECTED_GATE_COMMAND_FRAGMENTS = {
+    "renderer_pdf_runtime": ["test-renderer-container.sh"],
+    "mysql_bootstrap_runtime": ["migrate.sh", "validate-db.sh"],
+    "n8n_import_runtime": ["import-n8n-workflows.sh"],
+    "telegram_live_getme_and_webhook": ["test-telegram.sh", "telegram-webhook.sh"],
+    "llm_live_structured_output": ["llm_parser.cli structured-smoke"],
+    "production_read_only_discovery": ["discover-environment.sh"],
+    "production_deploy": ["healthcheck.sh"],
+    "live_acceptance": ["Telegram", "scenario A-E"],
+    "production_regression": ["preflight-readiness.sh", "healthcheck.sh"],
+}
+
 SECRET_PATTERNS = [
     re.compile(r"\bsk-[A-Za-z0-9_-]{20,}\b"),
     re.compile(r"\b\d{6,}:[A-Za-z0-9_-]{20,}\b"),
@@ -41,6 +53,7 @@ def main() -> int:
 
     assert_no_secret_like_value(args.command, "command")
     assert_no_secret_like_value(args.evidence, "evidence")
+    validate_gate_command(args.gate, args.command)
 
     payload = load_or_initialize_payload(args.file, args.template, args.environment)
     payload["environment"] = args.environment
@@ -85,6 +98,12 @@ def assert_no_secret_like_value(value: str, field_name: str) -> None:
     for pattern in SECRET_PATTERNS:
         if pattern.search(value):
             raise SystemExit(f"{field_name} appears to contain a secret-like value")
+
+
+def validate_gate_command(gate: str, command: str) -> None:
+    missing = [fragment for fragment in EXPECTED_GATE_COMMAND_FRAGMENTS[gate] if fragment not in command]
+    if missing:
+        raise SystemExit(f"{gate} command must include: {','.join(missing)}")
 
 
 def now_iso() -> str:

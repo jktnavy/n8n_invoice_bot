@@ -31,6 +31,18 @@ RUNTIME_GATES = [
     "production_regression",
 ]
 
+EXPECTED_GATE_COMMAND_FRAGMENTS = {
+    "renderer_pdf_runtime": ["test-renderer-container.sh"],
+    "mysql_bootstrap_runtime": ["migrate.sh", "validate-db.sh"],
+    "n8n_import_runtime": ["import-n8n-workflows.sh"],
+    "telegram_live_getme_and_webhook": ["test-telegram.sh", "telegram-webhook.sh"],
+    "llm_live_structured_output": ["llm_parser.cli structured-smoke"],
+    "production_read_only_discovery": ["discover-environment.sh"],
+    "production_deploy": ["healthcheck.sh"],
+    "live_acceptance": ["Telegram", "scenario A-E"],
+    "production_regression": ["preflight-readiness.sh", "healthcheck.sh"],
+}
+
 SECRET_PATTERNS = [
     re.compile(r"\bsk-[A-Za-z0-9_-]{20,}\b"),
     re.compile(r"\b\d{6,}:[A-Za-z0-9_-]{20,}\b"),
@@ -76,7 +88,7 @@ def main() -> int:
     print("VERIFIED_RUNTIME_GATES=" + ",".join(verified_gates))
     print("UNVERIFIED_RUNTIME_GATES=" + ",".join(unverified_gates))
     print("V2_READY=" + ("YES" if not unverified_gates and evidence_result["status"] == "valid" else "NO"))
-    return 0
+    return 1 if evidence_result["status"] == "invalid" else 0
 
 
 def validate_runtime_evidence(path: Path) -> dict:
@@ -118,10 +130,18 @@ def validate_runtime_evidence(path: Path) -> dict:
             continue
         if gate_evidence.get("verified") is not True:
             continue
+        missing_required_field = False
         for field in ["verified_at", "command", "evidence"]:
             if not str(gate_evidence.get(field, "")).strip():
                 failures.append(f"{gate}: {field} is required when verified=true")
-        verified_gates.append(gate)
+                missing_required_field = True
+        command = str(gate_evidence.get("command", ""))
+        for fragment in EXPECTED_GATE_COMMAND_FRAGMENTS[gate]:
+            if fragment not in command:
+                failures.append(f"{gate}: command must include {fragment!r}")
+                missing_required_field = True
+        if not missing_required_field:
+            verified_gates.append(gate)
 
     return {"status": "invalid" if failures else "valid", "verified_gates": verified_gates, "failures": failures}
 
