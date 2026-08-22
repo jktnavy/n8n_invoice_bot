@@ -33,6 +33,20 @@ class AcceptanceSimulatorTest(unittest.TestCase):
         self.assertEqual(len(bot.store.invoices), 1)
         self.assertEqual(len(bot.store.deliveries), 1)
         self.assertEqual(bot.store.deliveries[0]["status"], "sent")
+        self.assertAuditEventsInclude(
+            bot,
+            [
+                "MESSAGE_RECEIVED",
+                "INTENT_DETECTED",
+                "DRAFT_CREATED",
+                "PREVIEW_SENT",
+                "APPROVAL_RECEIVED",
+                "INVOICE_CREATED",
+                "PDF_GENERATED",
+                "DELIVERY_STARTED",
+                "DELIVERY_SENT",
+            ],
+        )
 
     def test_scenario_b_revision_updates_same_draft_before_approval(self):
         bot = InvoiceBotSimulator()
@@ -65,6 +79,23 @@ class AcceptanceSimulatorTest(unittest.TestCase):
         self.assertEqual(len(bot.store.invoices), 1)
         self.assertEqual(len(bot.store.deliveries), 2)
         self.assertEqual(bot.store.deliveries[-1]["status"], "sent")
+        self.assertAuditEventsInclude(bot, ["DELIVERY_FAILED", "DELIVERY_STARTED", "DELIVERY_SENT", "INVOICE_RESENT"])
+
+    def test_audit_events_keep_one_correlation_id_per_message(self):
+        bot = InvoiceBotSimulator()
+
+        bot.handle_message("chat-1", "user-1", CREATE_MESSAGE)
+        bot.handle_message("chat-1", "user-1", "setuju")
+
+        by_correlation = {}
+        for event in bot.store.audit_logs:
+            by_correlation.setdefault(event["correlation_id"], []).append(event["event_type"])
+            self.assertEqual(event["telegram_chat_id"], "chat-1")
+            self.assertNotIn("token", str(event).lower())
+            self.assertNotIn("api_key", str(event).lower())
+
+        self.assertEqual(len(by_correlation), 2)
+        self.assertIn("MESSAGE_RECEIVED", next(iter(by_correlation.values())))
 
     def test_status_reports_last_invoice_and_delivery_state(self):
         bot = InvoiceBotSimulator()
@@ -171,6 +202,11 @@ class AcceptanceSimulatorTest(unittest.TestCase):
         self.assertEqual(invoice["payment_type"], "FULL_PAYMENT")
         self.assertEqual(invoice["down_payment_amount"], 0)
         self.assertEqual(invoice["balance_due"], 0)
+
+    def assertAuditEventsInclude(self, bot, expected_events):
+        actual_events = [event["event_type"] for event in bot.store.audit_logs]
+        for event in expected_events:
+            self.assertIn(event, actual_events)
 
 
 if __name__ == "__main__":

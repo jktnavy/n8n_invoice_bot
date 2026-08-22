@@ -16,3 +16,6 @@ Responsibilities:
 
 The renderer receives a full validated invoice payload and does not read MySQL directly.
 
+Audit logging is part of orchestration, not rendering. n8n/backend code carries
+one `correlation_id` from Telegram through LLM, database, renderer, and
+delivery, then writes sanitized events to `audit_logs`.

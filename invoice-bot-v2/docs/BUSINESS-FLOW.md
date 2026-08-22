@@ -50,3 +50,12 @@ does not mention an invoice number, the workflow uses the conversation's
 `last_invoice_id`. The bot must not guess delivery state from natural language.
 
 The offline workflow simulator in `services/workflow-sim` is an executable contract for these flows. n8n implementation should preserve the same observable behavior.
+
+## Audit Events
+
+Every incoming Telegram message gets a `correlation_id` and writes
+`MESSAGE_RECEIVED` plus `INTENT_DETECTED`. Successful create/approve/delivery
+flows must record at least `DRAFT_CREATED`, `PREVIEW_SENT`,
+`APPROVAL_RECEIVED`, `INVOICE_CREATED`, `PDF_GENERATED`, `DELIVERY_STARTED`,
+and `DELIVERY_SENT`. Failures use `ERROR` or the specific failure event, such as
+`DELIVERY_FAILED`. Resend success records `INVOICE_RESENT`.

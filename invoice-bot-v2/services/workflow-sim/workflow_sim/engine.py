@@ -12,6 +12,7 @@ class MemoryStore:
     drafts: dict[str, dict] = field(default_factory=dict)
     invoices: dict[int, dict] = field(default_factory=dict)
     deliveries: list[dict] = field(default_factory=list)
+    audit_logs: list[dict] = field(default_factory=list)
     conversations: dict[tuple[str, str | None], dict] = field(default_factory=dict)
     sequence_last_number: int = 0
     next_invoice_id: int = 1
@@ -29,29 +30,53 @@ class InvoiceBotSimulator:
         self.store = store or MemoryStore()
 
     def handle_message(self, chat_id: str, user_id: str | None, message: str, delivery_ok: bool = True) -> dict:
+        correlation_id = str(uuid4())
         conversation = self._conversation(chat_id, user_id)
+        self._audit(correlation_id, "MESSAGE_RECEIVED", "telegram_message", None, chat_id, user_id)
         intent = self.provider.classify_intent(message)["intent"]
+        self._audit(correlation_id, "INTENT_DETECTED", "telegram_message", None, chat_id, user_id, metadata={"intent": intent})
 
         if intent == "CREATE_INVOICE":
-            return self._create_draft(chat_id, user_id, message, conversation)
+            return self._create_draft(chat_id, user_id, message, conversation, correlation_id)
         if intent == "UPDATE_DRAFT":
-            return self._update_draft(message, conversation)
+            return self._update_draft(chat_id, user_id, message, conversation, correlation_id)
         if intent == "APPROVE_DRAFT":
-            return self._approve(chat_id, user_id, message, conversation, delivery_ok)
+            return self._approve(chat_id, user_id, message, conversation, delivery_ok, correlation_id)
         if intent == "RESEND_INVOICE":
-            return self._resend(chat_id, user_id, conversation, delivery_ok)
+            return self._resend(chat_id, user_id, conversation, delivery_ok, correlation_id)
         if intent == "GET_STATUS":
-            return self._status(message, conversation)
+            return self._status(chat_id, user_id, message, conversation, correlation_id)
+        self._audit(correlation_id, "ERROR", "telegram_message", None, chat_id, user_id, message="Unknown intent")
         return {"type": "UNKNOWN", "message": "Saya belum memahami permintaan itu."}
 
-    def _create_draft(self, chat_id: str, user_id: str | None, message: str, conversation: dict) -> dict:
+    def _create_draft(self, chat_id: str, user_id: str | None, message: str, conversation: dict, correlation_id: str) -> dict:
         extracted = self.provider.extract_invoice(message)
         if extracted["missing_fields"]:
+            self._audit(
+                correlation_id,
+                "ERROR",
+                "draft",
+                None,
+                chat_id,
+                user_id,
+                message="Missing required invoice fields",
+                metadata={"missing_fields": extracted["missing_fields"]},
+            )
             return {"type": "MISSING_FIELDS", "missing_fields": extracted["missing_fields"]}
 
         draft = self._draft_from_extraction(chat_id, user_id, message, extracted)
         duplicate_invoice = self._find_invoice_by_fingerprint(draft["content_fingerprint"])
         if duplicate_invoice:
+            self._audit(
+                correlation_id,
+                "ERROR",
+                "invoice",
+                duplicate_invoice["id"],
+                chat_id,
+                user_id,
+                message="Duplicate invoice request",
+                metadata={"invoice_number": duplicate_invoice["invoice_number"]},
+            )
             return {
                 "type": "DUPLICATE_INVOICE",
                 "invoice_number": duplicate_invoice["invoice_number"],
@@ -62,19 +87,33 @@ class InvoiceBotSimulator:
         if active_duplicate:
             conversation["active_draft_id"] = active_duplicate["id"]
             conversation["conversation_state"] = "AWAITING_APPROVAL"
+            self._audit(correlation_id, "PREVIEW_SENT", "draft", active_duplicate["id"], chat_id, user_id)
             return {"type": "DRAFT_REUSED", "draft_id": active_duplicate["id"], "grand_total": active_duplicate["grand_total"]}
 
         self.store.drafts[draft["id"]] = draft
         conversation["active_draft_id"] = draft["id"]
         conversation["conversation_state"] = "AWAITING_APPROVAL"
+        self._audit(correlation_id, "DRAFT_CREATED", "draft", draft["id"], chat_id, user_id)
+        self._audit(correlation_id, "PREVIEW_SENT", "draft", draft["id"], chat_id, user_id)
         return {"type": "PREVIEW", "draft_id": draft["id"], "grand_total": draft["grand_total"], "invoice_number": None}
 
-    def _update_draft(self, message: str, conversation: dict) -> dict:
+    def _update_draft(self, chat_id: str, user_id: str | None, message: str, conversation: dict, correlation_id: str) -> dict:
         if conversation.get("conversation_state") != "AWAITING_APPROVAL" or not conversation.get("active_draft_id"):
+            self._audit(correlation_id, "ERROR", "draft", None, chat_id, user_id, message="No active draft to update")
             return {"type": "NO_ACTIVE_DRAFT"}
         draft = self.store.drafts[conversation["active_draft_id"]]
         patch = self.provider.extract_patch(message, draft)
         if patch["missing_fields"]:
+            self._audit(
+                correlation_id,
+                "ERROR",
+                "draft",
+                draft["id"],
+                chat_id,
+                user_id,
+                message="Draft patch not understood",
+                metadata={"missing_fields": patch["missing_fields"]},
+            )
             return {"type": "PATCH_NOT_UNDERSTOOD", "missing_fields": patch["missing_fields"]}
 
         for operation in patch["patches"]:
@@ -85,18 +124,24 @@ class InvoiceBotSimulator:
                 draft[operation["field"]] = operation["value"]
         self._recalculate_draft(draft)
         draft["status"] = "AWAITING_APPROVAL"
+        self._audit(correlation_id, "DRAFT_UPDATED", "draft", draft["id"], chat_id, user_id)
+        self._audit(correlation_id, "PREVIEW_SENT", "draft", draft["id"], chat_id, user_id)
         return {"type": "PREVIEW", "draft_id": draft["id"], "grand_total": draft["grand_total"], "invoice_number": None}
 
-    def _approve(self, chat_id: str, user_id: str | None, message: str, conversation: dict, delivery_ok: bool) -> dict:
+    def _approve(self, chat_id: str, user_id: str | None, message: str, conversation: dict, delivery_ok: bool, correlation_id: str) -> dict:
         if not is_natural_approval(message, conversation.get("conversation_state", "IDLE")):
+            self._audit(correlation_id, "ERROR", "draft", None, chat_id, user_id, message="Approval without awaiting draft")
             return {"type": "NO_ACTIVE_DRAFT", "message": "Tidak ada draft invoice yang sedang menunggu persetujuan."}
         draft = self.store.drafts[conversation["active_draft_id"]]
+        self._audit(correlation_id, "APPROVAL_RECEIVED", "draft", draft["id"], chat_id, user_id)
         invoice = self._create_invoice_from_draft(draft)
+        self._audit(correlation_id, "INVOICE_CREATED", "invoice", invoice["id"], chat_id, user_id, metadata={"invoice_number": invoice["invoice_number"]})
+        self._audit(correlation_id, "PDF_GENERATED", "invoice", invoice["id"], chat_id, user_id, metadata={"pdf_path": invoice["pdf_path"]})
         draft["status"] = "APPROVED"
         conversation["active_draft_id"] = None
         conversation["last_invoice_id"] = invoice["id"]
         conversation["conversation_state"] = "DELIVERY_PENDING"
-        delivery = self._send_invoice(invoice, chat_id, delivery_ok)
+        delivery = self._send_invoice(invoice, chat_id, delivery_ok, correlation_id, user_id)
         conversation["conversation_state"] = "SENT" if delivery["status"] == "sent" else "ERROR"
         invoice["status"] = "SENT" if delivery["status"] == "sent" else "DELIVERY_FAILED"
         return {
@@ -108,13 +153,16 @@ class InvoiceBotSimulator:
             "grand_total": invoice["grand_total"],
         }
 
-    def _resend(self, chat_id: str, user_id: str | None, conversation: dict, delivery_ok: bool) -> dict:
+    def _resend(self, chat_id: str, user_id: str | None, conversation: dict, delivery_ok: bool, correlation_id: str) -> dict:
         invoice_id = conversation.get("last_invoice_id")
         if not invoice_id:
+            self._audit(correlation_id, "ERROR", "invoice", None, chat_id, user_id, message="No invoice available to resend")
             return {"type": "NO_INVOICE"}
         invoice = self.store.invoices[invoice_id]
-        delivery = self._send_invoice(invoice, chat_id, delivery_ok)
+        delivery = self._send_invoice(invoice, chat_id, delivery_ok, correlation_id, user_id)
         invoice["status"] = "SENT" if delivery["status"] == "sent" else "DELIVERY_FAILED"
+        if delivery["status"] == "sent":
+            self._audit(correlation_id, "INVOICE_RESENT", "invoice", invoice["id"], chat_id, user_id, metadata={"delivery_id": delivery["id"]})
         return {
             "type": "INVOICE_RESENT" if delivery["status"] == "sent" else "DELIVERY_FAILED",
             "invoice_id": invoice["id"],
@@ -123,9 +171,10 @@ class InvoiceBotSimulator:
             "delivery_status": delivery["status"],
         }
 
-    def _status(self, message: str, conversation: dict) -> dict:
+    def _status(self, chat_id: str, user_id: str | None, message: str, conversation: dict, correlation_id: str) -> dict:
         invoice = self._find_invoice_for_status(message, conversation)
         if not invoice:
+            self._audit(correlation_id, "ERROR", "invoice", None, chat_id, user_id, message="Invoice status not found")
             return {"type": "NO_INVOICE"}
         delivery = self._latest_delivery(invoice["id"])
         return {
@@ -217,7 +266,7 @@ class InvoiceBotSimulator:
         self.store.invoices[invoice_id] = invoice
         return invoice
 
-    def _send_invoice(self, invoice: dict, chat_id: str, delivery_ok: bool) -> dict:
+    def _send_invoice(self, invoice: dict, chat_id: str, delivery_ok: bool, correlation_id: str, user_id: str | None) -> dict:
         delivery = {
             "id": len(self.store.deliveries) + 1,
             "invoice_id": invoice["id"],
@@ -228,7 +277,41 @@ class InvoiceBotSimulator:
             "provider_error_message": None if delivery_ok else "Bad Request: chat not found",
         }
         self.store.deliveries.append(delivery)
+        self._audit(correlation_id, "DELIVERY_STARTED", "delivery", delivery["id"], chat_id, user_id, metadata={"invoice_id": invoice["id"]})
+        self._audit(
+            correlation_id,
+            "DELIVERY_SENT" if delivery_ok else "DELIVERY_FAILED",
+            "delivery",
+            delivery["id"],
+            chat_id,
+            user_id,
+            metadata={"invoice_id": invoice["id"], "provider_message_id": delivery["provider_message_id"]},
+        )
         return delivery
+
+    def _audit(
+        self,
+        correlation_id: str,
+        event_type: str,
+        entity_type: str | None,
+        entity_id: str | int | None,
+        chat_id: str,
+        user_id: str | None,
+        message: str | None = None,
+        metadata: dict | None = None,
+    ) -> None:
+        self.store.audit_logs.append(
+            {
+                "correlation_id": correlation_id,
+                "event_type": event_type,
+                "entity_type": entity_type,
+                "entity_id": str(entity_id) if entity_id is not None else None,
+                "telegram_chat_id": chat_id,
+                "telegram_user_id": user_id,
+                "message": message,
+                "metadata": metadata or {},
+            }
+        )
 
     def _conversation(self, chat_id: str, user_id: str | None) -> dict:
         key = (chat_id, user_id)
