@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
+import re
 from uuid import uuid4
 
 from invoice_core import InvoiceItemInput, calculate_invoice_totals, content_fingerprint, format_invoice_number, is_natural_approval
@@ -73,7 +74,7 @@ class InvoiceBotSimulator:
             return {"type": "MISSING_FIELDS", "missing_fields": extracted["missing_fields"]}
 
         draft = self._draft_from_extraction(chat_id, user_id, message, extracted)
-        duplicate_invoice = self._find_invoice_by_fingerprint(draft["content_fingerprint"])
+        duplicate_invoice = self._find_invoice_by_fingerprint(chat_id, user_id, draft["content_fingerprint"])
         if duplicate_invoice:
             self._audit(
                 correlation_id,
@@ -91,7 +92,7 @@ class InvoiceBotSimulator:
                 "message": "Invoice dengan data sama sudah ada. Mau kirim ulang, lihat detail, atau benar-benar buat invoice baru?",
             }
 
-        active_duplicate = self._find_active_draft(chat_id, draft["content_fingerprint"])
+        active_duplicate = self._find_active_draft(chat_id, user_id, draft["content_fingerprint"])
         if active_duplicate:
             conversation["active_draft_id"] = active_duplicate["id"]
             conversation["conversation_state"] = "AWAITING_APPROVAL"
@@ -391,16 +392,23 @@ class InvoiceBotSimulator:
             }
         return self.store.conversations[key]
 
-    def _find_invoice_by_fingerprint(self, fingerprint: str) -> dict | None:
+    def _find_invoice_by_fingerprint(self, chat_id: str, user_id: str | None, fingerprint: str) -> dict | None:
         for invoice in sorted(self.store.invoices.values(), key=lambda value: value["id"], reverse=True):
-            if invoice["content_fingerprint"] == fingerprint and invoice["status"] != "VOID":
+            source_draft = self.store.drafts[invoice["source_draft_id"]]
+            if (
+                source_draft["telegram_chat_id"] == chat_id
+                and source_draft["telegram_user_id"] == user_id
+                and invoice["content_fingerprint"] == fingerprint
+                and invoice["status"] != "VOID"
+            ):
                 return invoice
         return None
 
-    def _find_active_draft(self, chat_id: str, fingerprint: str) -> dict | None:
+    def _find_active_draft(self, chat_id: str, user_id: str | None, fingerprint: str) -> dict | None:
         for draft in self.store.drafts.values():
             if (
                 draft["telegram_chat_id"] == chat_id
+                and draft["telegram_user_id"] == user_id
                 and draft["content_fingerprint"] == fingerprint
                 and draft["status"] in {"DRAFT", "AWAITING_APPROVAL"}
             ):
@@ -409,9 +417,18 @@ class InvoiceBotSimulator:
 
     def _find_invoice_for_message(self, message: str, conversation: dict, include_void: bool = False) -> dict | None:
         text = message.upper()
+        has_explicit_invoice_number = re.search(r"\bINV-\d{4}/STA/[IVXLCDM]+/\d{4}\b", text) is not None
         for invoice in self.store.invoices.values():
-            if invoice["invoice_number"].upper() in text and (include_void or invoice["status"] != "VOID"):
+            source_draft = self.store.drafts[invoice["source_draft_id"]]
+            if (
+                source_draft["telegram_chat_id"] == conversation["telegram_chat_id"]
+                and source_draft["telegram_user_id"] == conversation["telegram_user_id"]
+                and invoice["invoice_number"].upper() in text
+                and (include_void or invoice["status"] != "VOID")
+            ):
                 return invoice
+        if has_explicit_invoice_number:
+            return None
         invoice_id = conversation.get("last_invoice_id")
         if invoice_id:
             invoice = self.store.invoices.get(invoice_id)

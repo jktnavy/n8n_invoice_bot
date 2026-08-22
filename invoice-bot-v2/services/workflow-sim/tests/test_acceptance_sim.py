@@ -139,6 +139,41 @@ class AcceptanceSimulatorTest(unittest.TestCase):
         self.assertEqual(len(bot.store.invoices), 1)
         self.assertAuditEventsInclude(bot, ["INVOICE_DETAIL_VIEWED"])
 
+    def test_duplicate_scope_does_not_cross_telegram_user(self):
+        bot = InvoiceBotSimulator()
+        bot.handle_message("chat-1", "user-1", CREATE_MESSAGE)
+        first = bot.handle_message("chat-1", "user-1", "setuju")
+
+        second_preview = bot.handle_message("chat-1", "user-2", CREATE_MESSAGE)
+        self.assertEqual(second_preview["type"], "PREVIEW")
+        second = bot.handle_message("chat-1", "user-2", "setuju")
+        self.assertEqual(second["invoice_number"], "INV-0002/STA/VIII/2026")
+        self.assertEqual(len(bot.store.invoices), 2)
+
+        user_2_status_for_user_1_invoice = bot.handle_message("chat-1", "user-2", f"status {first['invoice_number']}")
+        self.assertEqual(user_2_status_for_user_1_invoice["type"], "NO_INVOICE")
+
+    def test_duplicate_scope_reuses_same_null_telegram_user(self):
+        bot = InvoiceBotSimulator()
+        bot.handle_message("chat-1", None, CREATE_MESSAGE)
+        first = bot.handle_message("chat-1", None, "setuju")
+
+        duplicate = bot.handle_message("chat-1", None, CREATE_MESSAGE)
+        self.assertEqual(duplicate["type"], "DUPLICATE_INVOICE")
+        self.assertEqual(duplicate["invoice_number"], first["invoice_number"])
+        self.assertEqual(len(bot.store.invoices), 1)
+
+    def test_explicit_invoice_lookup_is_scoped_to_source_chat(self):
+        bot = InvoiceBotSimulator()
+        bot.handle_message("chat-1", "user-1", CREATE_MESSAGE)
+        first = bot.handle_message("chat-1", "user-1", "setuju")
+
+        status_from_other_chat = bot.handle_message("chat-2", "user-1", f"status {first['invoice_number']}")
+        detail_from_other_chat = bot.handle_message("chat-2", "user-1", f"lihat detail {first['invoice_number']}")
+
+        self.assertEqual(status_from_other_chat["type"], "NO_INVOICE")
+        self.assertEqual(detail_from_other_chat["type"], "NO_INVOICE")
+
     def test_scenario_e_ambiguous_request_asks_missing_fields(self):
         bot = InvoiceBotSimulator()
         result = bot.handle_message("chat-1", "user-1", "buat invoice PT ABC medium bus ke Puncak")
