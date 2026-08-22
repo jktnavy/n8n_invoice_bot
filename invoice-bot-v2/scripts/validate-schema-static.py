@@ -51,6 +51,12 @@ def main() -> int:
     if "target_chat_id" not in SCHEMA:
         raise SystemExit("invoice_deliveries must store target_chat_id")
 
+    if "telegram_user_key VARCHAR(64) GENERATED ALWAYS AS (COALESCE(telegram_user_id, '')) STORED" not in SCHEMA:
+        raise SystemExit("telegram_conversations must normalize nullable telegram_user_id for uniqueness")
+
+    if "UNIQUE KEY uq_conversation_chat_user (telegram_chat_id, telegram_user_key)" not in SCHEMA:
+        raise SystemExit("telegram_conversations must uniquely bind chat plus normalized user key")
+
     for table in ["invoice_drafts", "invoices"]:
         table_match = re.search(rf"CREATE\s+TABLE\s+{table}\s*\((.*?)\)\s+ENGINE", SCHEMA, re.IGNORECASE | re.DOTALL)
         if not table_match:
@@ -76,6 +82,7 @@ def main() -> int:
         ":invoice_id",
         ":invoice_number",
         ":telegram_chat_id",
+        "c.telegram_user_key = COALESCE(:telegram_user_id, '')",
         "i.status <> 'VOID'",
     ]:
         if status_fragment not in GET_STATUS_SQL:
@@ -91,6 +98,7 @@ def main() -> int:
         "MONTH(:invoice_date)",
         "YEAR(:invoice_date)",
         "INTO @invoice_number",
+        "telegram_user_key = COALESCE(:telegram_user_id, '')",
     ]:
         if required_fragment not in APPROVE_DRAFT_SQL:
             raise SystemExit(f"approve-draft missing invoice number allocation fragment: {required_fragment}")
@@ -101,6 +109,8 @@ def main() -> int:
         "status = 'VOID'",
         "i.status <> 'VOID'",
         "c.last_invoice_id = i.id",
+        "c.telegram_user_key = COALESCE(:telegram_user_id, '')",
+        "telegram_user_key = COALESCE(:telegram_user_id, '')",
         ":invoice_id",
         ":invoice_number",
         ":telegram_chat_id",

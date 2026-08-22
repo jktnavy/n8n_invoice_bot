@@ -47,6 +47,13 @@ into approval.
 invoice records. Delivery retry/resend creates a new delivery attempt, not a new
 invoice.
 
+`telegram_conversations` uses a generated `telegram_user_key` based on
+`COALESCE(telegram_user_id, '')` for the unique chat/user key. This prevents
+duplicate conversation rows when Telegram user id is unavailable and would
+otherwise be stored as `NULL`.
+Conversation lookup queries use the same generated key instead of `OR
+telegram_user_id IS NULL` matching.
+
 Final invoice cancellation uses `database/queries/void-invoice.sql` and updates
 `invoices.status` to `VOID` without deleting invoices, items, PDFs, deliveries,
 or audit records. Voided invoices are ignored by duplicate and status lookup

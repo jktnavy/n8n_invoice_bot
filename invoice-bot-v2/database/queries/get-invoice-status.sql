@@ -39,7 +39,7 @@ WHERE (
       :invoice_id IS NULL
       AND :invoice_number IS NULL
       AND c.telegram_chat_id = :telegram_chat_id
-      AND (c.telegram_user_id = :telegram_user_id OR c.telegram_user_id IS NULL)
+      AND c.telegram_user_key = COALESCE(:telegram_user_id, '')
     )
   )
   AND i.status <> 'VOID'

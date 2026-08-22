@@ -137,7 +137,7 @@ SET active_draft_id = NULL,
     last_invoice_id = @invoice_id,
     conversation_state = 'GENERATING'
 WHERE telegram_chat_id = :telegram_chat_id
-  AND (telegram_user_id = :telegram_user_id OR telegram_user_id IS NULL);
+  AND telegram_user_key = COALESCE(:telegram_user_id, '');
 
 SELECT invoice_number
 INTO @invoice_number

@@ -19,7 +19,7 @@ WHERE (
       :invoice_id IS NULL
       AND :invoice_number IS NULL
       AND c.telegram_chat_id = :telegram_chat_id
-      AND (c.telegram_user_id = :telegram_user_id OR :telegram_user_id IS NULL)
+      AND c.telegram_user_key = COALESCE(:telegram_user_id, '')
     )
   )
   AND i.status <> 'VOID'
@@ -36,7 +36,7 @@ UPDATE telegram_conversations
 SET conversation_state = 'IDLE'
 WHERE last_invoice_id = @invoice_id
   AND telegram_chat_id = :telegram_chat_id
-  AND (telegram_user_id = :telegram_user_id OR :telegram_user_id IS NULL);
+  AND telegram_user_key = COALESCE(:telegram_user_id, '');
 
 COMMIT;
 

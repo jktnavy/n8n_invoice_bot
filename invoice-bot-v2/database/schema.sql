@@ -127,12 +127,13 @@ CREATE TABLE telegram_conversations (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   telegram_chat_id VARCHAR(64) NOT NULL,
   telegram_user_id VARCHAR(64) NULL,
+  telegram_user_key VARCHAR(64) GENERATED ALWAYS AS (COALESCE(telegram_user_id, '')) STORED,
   active_draft_id CHAR(36) NULL,
   last_invoice_id BIGINT UNSIGNED NULL,
   conversation_state ENUM('IDLE','AWAITING_APPROVAL','GENERATING','DELIVERY_PENDING','SENT','ERROR') NOT NULL DEFAULT 'IDLE',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_conversation_chat_user (telegram_chat_id, telegram_user_id),
+  UNIQUE KEY uq_conversation_chat_user (telegram_chat_id, telegram_user_key),
   CONSTRAINT fk_conversations_active_draft FOREIGN KEY (active_draft_id)
     REFERENCES invoice_drafts(id) ON DELETE SET NULL,
   CONSTRAINT fk_conversations_last_invoice FOREIGN KEY (last_invoice_id)
