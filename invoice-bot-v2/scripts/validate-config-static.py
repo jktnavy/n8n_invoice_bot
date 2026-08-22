@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import re
 from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -46,6 +47,15 @@ REQUIRED_GITIGNORE = {
     ".idea/",
 }
 
+COMPOSE_SECRET_ENV_KEYS = {
+    "MYSQL_PASSWORD",
+    "MYSQL_ROOT_PASSWORD",
+    "N8N_ENCRYPTION_KEY",
+    "WEBHOOK_URL",
+    "TELEGRAM_BOT_TOKEN",
+    "LLM_API_KEY",
+}
+
 
 def main() -> int:
     env = parse_env_example(ROOT_DIR / ".env.example")
@@ -66,6 +76,10 @@ def main() -> int:
     expected_compose_bits = [
         "MYSQL_DATABASE: ${MYSQL_DATABASE:-invoice_bot_v2}",
         "MYSQL_USER: ${MYSQL_USER:-invoice_bot_v2}",
+        "MYSQL_PASSWORD: ${MYSQL_PASSWORD}",
+        "MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}",
+        "WEBHOOK_URL: ${WEBHOOK_URL}",
+        "N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}",
         "${MYSQL_PORT_PUBLISHED:-3307}:3306",
         "${INVOICE_RENDERER_PORT:-8000}:8000",
         "${N8N_PORT:-5678}:5678",
@@ -74,6 +88,7 @@ def main() -> int:
     for bit in expected_compose_bits:
         if bit not in compose:
             failures.append(f"missing compose config: {bit}")
+    failures.extend(validate_compose_secret_env_values(compose))
 
     if failures:
         print("CONFIG_STATIC_VALIDATION=FAIL")
@@ -93,6 +108,17 @@ def parse_env_example(path: Path) -> dict[str, str]:
         key, _, value = line.partition("=")
         values[key] = value
     return values
+
+
+def validate_compose_secret_env_values(compose: str) -> list[str]:
+    failures = []
+    for key, value in re.findall(r"^\s+([A-Z0-9_]+):\s*(.*)$", compose, flags=re.MULTILINE):
+        if key not in COMPOSE_SECRET_ENV_KEYS:
+            continue
+        value = value.strip().strip('"').strip("'")
+        if value and "${" not in value:
+            failures.append(f"docker-compose.yml: {key} must use environment substitution")
+    return failures
 
 
 if __name__ == "__main__":
