@@ -41,6 +41,26 @@ class TelegramClientTest(unittest.TestCase):
         self.assertEqual(result.provider_error_code, "400")
         self.assertEqual(result.provider_error_message, "Bad Request: chat not found")
 
+    def test_provider_error_is_redacted_before_persistence(self):
+        def transport(url, body, headers):
+            return 400, {
+                "ok": False,
+                "error_code": 400,
+                "description": "Bad Request token=secret api_key=sk-test",
+                "parameters": {"authorization": "authorization=Bearer-secret"},
+            }
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            pdf = Path(tmpdir) / "invoice.pdf"
+            pdf.write_bytes(b"%PDF fake")
+            result = TelegramClient("token-secret", transport=transport).send_document("chat-1", pdf)
+
+        self.assertFalse(result.ok)
+        self.assertNotIn("secret", result.provider_error_message)
+        self.assertNotIn("sk-test", result.provider_error_message)
+        self.assertIn("token=[redacted]", result.provider_error_message)
+        self.assertNotIn("Bearer-secret", str(result.provider_response))
+
     def test_send_document_requires_provider_message_id(self):
         def transport(url, body, headers):
             return 200, {"ok": True, "result": {}}

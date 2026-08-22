@@ -219,13 +219,21 @@ assert.strictEqual(delivery.http_status, 200);
 
 const failedDelivery = runSnippet('n8n/code/telegram-delivery-result.js', {
   http_status: 400,
-  telegram_response: { ok: false, error_code: 400, description: 'Bad Request: chat not found' },
+  telegram_response: {
+    ok: false,
+    error_code: 400,
+    description: 'Bad Request: chat not found token=secret api_key=sk-test',
+    parameters: { authorization: 'authorization=Bearer-secret' },
+  },
 })[0].json;
 assert.strictEqual(failedDelivery.delivery_status, 'failed');
 assert.strictEqual(failedDelivery.provider_message_id, null);
 assert.strictEqual(failedDelivery.http_status, 400);
 assert.strictEqual(failedDelivery.provider_error_code, '400');
 assert.match(failedDelivery.provider_error_message, /chat not found/);
+assert.doesNotMatch(failedDelivery.provider_error_message, /secret|sk-test/);
+assert.doesNotMatch(JSON.stringify(failedDelivery.provider_response), /secret|sk-test|Bearer-secret/);
+assert.match(failedDelivery.provider_error_message, /token=\[redacted\]/);
 
 const missingMessageIdDelivery = runSnippet('n8n/code/telegram-delivery-result.js', {
   http_status: 200,

@@ -155,6 +155,8 @@ def validate_n8n_telegram_document_contract() -> list[str]:
         "response.result.message_id",
         "http_status",
         "provider_error_code",
+        "redactSensitive",
+        "provider_response: sanitizedResponse",
     ]:
         if required_fragment not in delivery_text:
             failures.append(f"n8n/code/telegram-delivery-result.js missing {required_fragment}")

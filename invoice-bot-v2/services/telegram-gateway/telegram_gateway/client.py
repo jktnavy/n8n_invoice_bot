@@ -95,14 +95,29 @@ def _telegram_result(http_status: int | None, response: dict, require_message_id
     result = response.get("result") if isinstance(response.get("result"), dict) else {}
     message_id = result.get("message_id")
     effective_ok = ok and (message_id is not None if require_message_id else response.get("result") is not None)
+    sanitized_response = _sanitize_provider_response(response)
     return TelegramResult(
         ok=effective_ok,
         http_status=http_status,
         provider_message_id=str(message_id) if message_id is not None else None,
         provider_error_code=None if effective_ok else str(response.get("error_code", "")) or None,
-        provider_error_message=None if effective_ok else response.get("description", "Telegram request failed"),
-        provider_response=response,
+        provider_error_message=None if effective_ok else _redact_sensitive_text(response.get("description", "Telegram request failed")),
+        provider_response=sanitized_response,
     )
+
+
+def _sanitize_provider_response(value):
+    if isinstance(value, str):
+        return _redact_sensitive_text(value)
+    if isinstance(value, list):
+        return [_sanitize_provider_response(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _sanitize_provider_response(item) for key, item in value.items()}
+    return value
+
+
+def _redact_sensitive_text(value: object) -> str:
+    return re.sub(r"(token|password|api[_-]?key|authorization)=\S+", r"\1=[redacted]", str(value), flags=re.IGNORECASE)
 
 
 def _multipart_body(fields: dict[str, str], file_field: str, path: Path, boundary: str) -> bytes:
