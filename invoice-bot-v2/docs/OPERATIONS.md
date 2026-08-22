@@ -57,6 +57,8 @@ The script supports `auto`, `native`, and `compose` modes:
 
 `auto` checks MySQL with native `mysqladmin` when runtime credentials are
 available, then falls back to Docker Compose only when Docker is present.
+Any checked service that reports `FAIL` makes the script exit non-zero. Checks
+that report `SKIP` are intentionally omitted because credentials are absent.
 
 The LLM provider check runs the deterministic mock provider when
 `LLM_PROVIDER=mock`. For live providers it skips safely until both

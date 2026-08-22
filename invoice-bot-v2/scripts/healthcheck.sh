@@ -3,6 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MODE="${1:-auto}"
+FAILED=0
 
 cd "$ROOT_DIR"
 
@@ -13,6 +14,7 @@ check_http() {
     printf '%-18s PASS\n' "$name"
   else
     printf '%-18s FAIL\n' "$name"
+    FAILED=1
   fi
 }
 
@@ -37,6 +39,7 @@ case "$MODE" in
       printf '%-18s PASS\n' "MySQL"
     else
       printf '%-18s FAIL\n' "MySQL"
+      FAILED=1
     fi
     ;;
   compose)
@@ -44,6 +47,7 @@ case "$MODE" in
       printf '%-18s PASS\n' "MySQL"
     else
       printf '%-18s FAIL\n' "MySQL"
+      FAILED=1
     fi
     ;;
   auto)
@@ -53,6 +57,7 @@ case "$MODE" in
       printf '%-18s PASS\n' "MySQL"
     else
       printf '%-18s FAIL\n' "MySQL"
+      FAILED=1
     fi
     ;;
   *)
@@ -69,6 +74,7 @@ if [[ -n "${TELEGRAM_BOT_TOKEN:-}" ]]; then
     printf '%-18s PASS\n' "Telegram getMe"
   else
     printf '%-18s FAIL\n' "Telegram getMe"
+    FAILED=1
   fi
 else
   printf '%-18s SKIP\n' "Telegram getMe"
@@ -82,4 +88,7 @@ if PYTHONPATH="$ROOT_DIR/services/llm-parser" python3 -m llm_parser.cli healthch
   fi
 else
   printf '%-18s FAIL\n' "LLM Provider"
+  FAILED=1
 fi
+
+exit "$FAILED"
