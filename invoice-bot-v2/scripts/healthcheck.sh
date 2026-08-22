@@ -80,7 +80,7 @@ else
   printf '%-18s SKIP\n' "Telegram getMe"
 fi
 
-if PYTHONPATH="$ROOT_DIR/services/llm-parser" python3 -m llm_parser.cli healthcheck >/dev/null 2>&1; then
+if PYTHONPATH="$ROOT_DIR/services/llm-parser" python3 -m llm_parser.cli structured-smoke >/dev/null 2>&1; then
   if [[ "${LLM_PROVIDER:-openai}" != "mock" && ( -z "${LLM_API_KEY:-}" || -z "${LLM_MODEL:-}" ) ]]; then
     printf '%-18s SKIP\n' "LLM Provider"
   else

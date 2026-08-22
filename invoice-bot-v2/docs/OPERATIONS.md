@@ -60,9 +60,11 @@ available, then falls back to Docker Compose only when Docker is present.
 Any checked service that reports `FAIL` makes the script exit non-zero. Checks
 that report `SKIP` are intentionally omitted because credentials are absent.
 
-The LLM provider check runs the deterministic mock provider when
-`LLM_PROVIDER=mock`. For live providers it skips safely until both
-`LLM_API_KEY` and `LLM_MODEL` are present.
+The LLM provider check runs the structured-output smoke test. It uses the
+deterministic mock provider when `LLM_PROVIDER=mock`. For live providers it
+skips safely until both `LLM_API_KEY` and `LLM_MODEL` are present, then checks
+both intent classification and invoice draft extraction against the configured
+provider.
 
 ## Logs
 

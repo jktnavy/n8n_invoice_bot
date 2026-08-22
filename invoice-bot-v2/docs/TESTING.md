@@ -29,6 +29,16 @@ Static config validation is included in `test-local` and can be run directly:
 ./scripts/readiness-gate.py
 ```
 
+LLM structured-output smoke check:
+
+```bash
+PYTHONPATH=services/llm-parser python3 -m llm_parser.cli structured-smoke
+```
+
+Use `LLM_PROVIDER=mock` for offline deterministic validation. With live
+provider credentials, the same command exercises intent classification and
+invoice draft extraction against the configured provider.
+
 Database bootstrap validation, when credentials are available:
 
 ```bash

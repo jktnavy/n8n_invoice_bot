@@ -60,7 +60,14 @@ def main() -> int:
         failures.append("native.env.example: LLM_BASE_URL must be blank")
 
     script_expectations = {
-        "scripts/healthcheck.sh": ["MODE=\"${1:-auto}\"", "mysqladmin ping", "docker compose exec -T mysql", "Usage: $0 [auto|native|compose]", "exit \"$FAILED\""],
+        "scripts/healthcheck.sh": [
+            "MODE=\"${1:-auto}\"",
+            "mysqladmin ping",
+            "docker compose exec -T mysql",
+            "python3 -m llm_parser.cli structured-smoke",
+            "Usage: $0 [auto|native|compose]",
+            "exit \"$FAILED\"",
+        ],
         "scripts/migrate.sh": ["MODE=\"${1:-auto}\"", "MYSQL_MIGRATION_USER", "run_native()", "run_compose()", "MIGRATE=PASS"],
         "scripts/backup-db.sh": ["MODE=\"${1:-auto}\"", "run_native()", "run_compose()", "Backup written:"],
         "scripts/test-renderer-container.sh": [

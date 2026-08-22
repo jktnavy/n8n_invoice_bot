@@ -20,6 +20,18 @@ Schemas:
 
 LLM output must be rejected when it does not match schema.
 
+Runtime structured-output smoke test:
+
+```bash
+PYTHONPATH=services/llm-parser python3 -m llm_parser.cli structured-smoke
+```
+
+With live `LLM_API_KEY` and `LLM_MODEL`, this classifies a PT Nusa invoice
+creation message and extracts an invoice draft. It fails if the intent is not
+`CREATE_INVOICE`, the draft schema is invalid, no customer/items are returned,
+or the smoke fixture still reports missing fields. Without live credentials it
+reports `skipped_live_credentials_missing`.
+
 OpenAI provider implementation:
 
 - Uses the Responses API endpoint.
