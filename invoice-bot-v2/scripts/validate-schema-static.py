@@ -5,6 +5,7 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).resolve().parents[1]
 SCHEMA = (ROOT_DIR / "database" / "schema.sql").read_text()
 SEQUENCE_EXAMPLE = (ROOT_DIR / "database" / "sequence-allocation.example.sql").read_text()
+QUERY_TEMPLATES = "\n".join(path.read_text() for path in sorted((ROOT_DIR / "database" / "queries").glob("*.sql")))
 
 REQUIRED_TABLES = {
     "customers",
@@ -28,7 +29,7 @@ def main() -> int:
     if missing:
         raise SystemExit(f"missing required tables: {', '.join(missing)}")
 
-    combined = f"{SCHEMA}\n{SEQUENCE_EXAMPLE}"
+    combined = f"{SCHEMA}\n{SEQUENCE_EXAMPLE}\n{QUERY_TEMPLATES}"
     if re.search(r"SELECT\s+MAX\s*\(", combined, re.IGNORECASE):
         raise SystemExit("unsafe SELECT MAX invoice-number allocation found")
 
@@ -47,4 +48,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

@@ -30,3 +30,5 @@ Deterministic snippets:
 ```text
 NODE_FUNCTION_ALLOW_BUILTIN=crypto
 ```
+
+Database operation templates are in `database/queries/`; workflow implementation should preserve their transaction and retry semantics.

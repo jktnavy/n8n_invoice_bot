@@ -37,6 +37,8 @@ Do not use `SELECT MAX(invoice_number) + 1`.
 
 Runtime DB user should be scoped to `invoice_bot_v2`; see `database/create-runtime-user.example.sql`.
 
+Parameterized operation templates live in `database/queries/`. They are intended to be translated into n8n MySQL nodes or backend code without changing the transaction boundaries.
+
 Validate a real database bootstrap with:
 
 ```bash
