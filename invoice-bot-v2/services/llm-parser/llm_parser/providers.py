@@ -27,6 +27,10 @@ def provider_from_env() -> LLMProvider:
         model=os.environ.get("LLM_MODEL", "").strip(),
         api_key=os.environ.get("LLM_API_KEY", "").strip(),
     )
+    if config.provider == "mock":
+        from .mock_provider import MockProvider
+
+        return MockProvider()
     if config.provider == "openai":
         return OpenAIProvider(config)
     if config.provider in {"deepseek", "gemini", "openrouter"}:
@@ -60,4 +64,3 @@ class NotImplementedProvider:
 
     def extract_patch(self, message: str, active_draft: dict) -> dict:
         raise NotImplementedError(f"{self.config.provider} provider is reserved behind the same interface")
-

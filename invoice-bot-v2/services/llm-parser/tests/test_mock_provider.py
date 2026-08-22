@@ -1,0 +1,35 @@
+import unittest
+
+from llm_parser.mock_provider import MockProvider
+
+
+class MockProviderTest(unittest.TestCase):
+    def setUp(self):
+        self.provider = MockProvider()
+
+    def test_classifies_create_invoice(self):
+        result = self.provider.classify_intent("buat invoice PT Nusa")
+        self.assertEqual(result["intent"], "CREATE_INVOICE")
+
+    def test_classifies_natural_approval(self):
+        result = self.provider.classify_intent("oke gas")
+        self.assertEqual(result["intent"], "APPROVE_DRAFT")
+
+    def test_extracts_pt_nusa_fixture(self):
+        result = self.provider.extract_invoice(
+            "Buat invoice PT Nusa Horizon, 2 medium tanggal 15 Harapan Indah ke Puncak 2,8 juta, tanggal 17 Puncak Jakarta 2,6 juta. Lunas."
+        )
+        self.assertEqual(result["customer"]["name"], "PT Nusa Horizon Wisata")
+        self.assertEqual(result["items"][0]["unit_price"], 2800000)
+        self.assertEqual(result["items"][1]["unit_price"], 2600000)
+        self.assertEqual(result["missing_fields"], [])
+
+    def test_extracts_revision_patch(self):
+        result = self.provider.extract_patch("tanggal pulang ganti tanggal 18", {})
+        self.assertEqual(result["patches"][0]["field"], "trip_date")
+        self.assertEqual(result["patches"][0]["value"], "2026-08-18")
+
+
+if __name__ == "__main__":
+    unittest.main()
+

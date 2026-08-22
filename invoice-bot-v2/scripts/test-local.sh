@@ -8,6 +8,9 @@ cd "$ROOT_DIR"
 PYTHONPATH="$ROOT_DIR/services/invoice-core" \
   python3 -m unittest discover -s "$ROOT_DIR/services/invoice-core/tests" -v
 
+PYTHONPATH="$ROOT_DIR/services/llm-parser" \
+  python3 -m unittest discover -s "$ROOT_DIR/services/llm-parser/tests" -v
+
 python3 "$ROOT_DIR/scripts/validate-fixture.py"
 python3 "$ROOT_DIR/scripts/validate-schema-static.py"
 
