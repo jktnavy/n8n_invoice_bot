@@ -108,9 +108,22 @@ def main() -> int:
         "YEAR(:invoice_date)",
         "INTO @invoice_number",
         "telegram_user_key = COALESCE(:telegram_user_id, '')",
+        "d.telegram_chat_id = :telegram_chat_id",
+        "d.status = 'AWAITING_APPROVAL'",
+        "@invoice_id > 0",
     ]:
         if required_fragment not in APPROVE_DRAFT_SQL:
             raise SystemExit(f"approve-draft missing invoice number allocation fragment: {required_fragment}")
+
+    guarded_writes = [
+        ("customer upsert", r"FROM invoice_drafts d\s+WHERE d\.id = :draft_id\s+AND d\.telegram_chat_id = :telegram_chat_id\s+AND d\.status = 'AWAITING_APPROVAL'"),
+        ("invoice insert", r"LEFT JOIN customers c ON c\.normalized_name = LOWER\(TRIM\(d\.customer_name\)\)\s+WHERE d\.id = :draft_id\s+AND d\.telegram_chat_id = :telegram_chat_id\s+AND d\.status = 'AWAITING_APPROVAL'"),
+        ("draft approval update", r"UPDATE invoice_drafts\s+SET status = 'APPROVED'\s+WHERE id = :draft_id\s+AND telegram_chat_id = :telegram_chat_id\s+AND status = 'AWAITING_APPROVAL'"),
+        ("conversation update", r"UPDATE telegram_conversations\s+SET active_draft_id = NULL,[\s\S]*?WHERE telegram_chat_id = :telegram_chat_id\s+AND telegram_user_key = COALESCE\(:telegram_user_id, ''\)\s+AND @invoice_id > 0"),
+    ]
+    for name, pattern in guarded_writes:
+        if not re.search(pattern, APPROVE_DRAFT_SQL, re.IGNORECASE):
+            raise SystemExit(f"approve-draft {name} must repeat draft ownership/status guard")
 
     for required_fragment in [
         "FOR UPDATE",

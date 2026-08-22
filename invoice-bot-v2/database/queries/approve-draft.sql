@@ -41,6 +41,8 @@ INSERT INTO customers (name, normalized_name)
 SELECT d.customer_name, LOWER(TRIM(d.customer_name))
 FROM invoice_drafts d
 WHERE d.id = :draft_id
+  AND d.telegram_chat_id = :telegram_chat_id
+  AND d.status = 'AWAITING_APPROVAL'
 ON DUPLICATE KEY UPDATE name = VALUES(name);
 
 INSERT INTO invoices (
@@ -95,7 +97,9 @@ SELECT
   d.content_fingerprint
 FROM invoice_drafts d
 LEFT JOIN customers c ON c.normalized_name = LOWER(TRIM(d.customer_name))
-WHERE d.id = :draft_id;
+WHERE d.id = :draft_id
+  AND d.telegram_chat_id = :telegram_chat_id
+  AND d.status = 'AWAITING_APPROVAL';
 
 SET @invoice_id = LAST_INSERT_ID();
 
@@ -126,18 +130,22 @@ SELECT
   description
 FROM invoice_draft_items
 WHERE draft_id = :draft_id
+  AND @invoice_id > 0
 ORDER BY sort_order;
 
 UPDATE invoice_drafts
 SET status = 'APPROVED'
-WHERE id = :draft_id;
+WHERE id = :draft_id
+  AND telegram_chat_id = :telegram_chat_id
+  AND status = 'AWAITING_APPROVAL';
 
 UPDATE telegram_conversations
 SET active_draft_id = NULL,
     last_invoice_id = @invoice_id,
     conversation_state = 'GENERATING'
 WHERE telegram_chat_id = :telegram_chat_id
-  AND telegram_user_key = COALESCE(:telegram_user_id, '');
+  AND telegram_user_key = COALESCE(:telegram_user_id, '')
+  AND @invoice_id > 0;
 
 SELECT invoice_number
 INTO @invoice_number
