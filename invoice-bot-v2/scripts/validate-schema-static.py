@@ -9,6 +9,7 @@ QUERY_DIR = ROOT_DIR / "database" / "queries"
 QUERY_TEMPLATES = "\n".join(path.read_text() for path in sorted(QUERY_DIR.glob("*.sql")))
 APPROVE_DRAFT_SQL = (QUERY_DIR / "approve-draft.sql").read_text()
 CREATE_DRAFT_SQL = (QUERY_DIR / "create-draft.sql").read_text()
+GET_STATUS_SQL = (QUERY_DIR / "get-invoice-status.sql").read_text()
 PATCH_SCHEMA = (ROOT_DIR / "llm" / "schemas" / "invoice-patch.schema.json").read_text()
 
 REQUIRED_TABLES = {
@@ -63,6 +64,18 @@ def main() -> int:
     for patch_term in ['"draft"', '"payment_type"', '"down_payment_amount"']:
         if patch_term not in PATCH_SCHEMA:
             raise SystemExit(f"invoice patch schema must support payment revision term {patch_term}")
+
+    for status_fragment in [
+        "c.last_invoice_id = i.id",
+        "delivery_status",
+        "provider_message_id",
+        ":invoice_id",
+        ":invoice_number",
+        ":telegram_chat_id",
+        "i.status <> 'VOID'",
+    ]:
+        if status_fragment not in GET_STATUS_SQL:
+            raise SystemExit(f"get-invoice-status query missing fragment: {status_fragment}")
 
     if ":invoice_number" in APPROVE_DRAFT_SQL:
         raise SystemExit("approve-draft must not accept invoice_number as an input parameter")

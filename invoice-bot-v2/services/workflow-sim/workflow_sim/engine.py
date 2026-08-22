@@ -40,6 +40,8 @@ class InvoiceBotSimulator:
             return self._approve(chat_id, user_id, message, conversation, delivery_ok)
         if intent == "RESEND_INVOICE":
             return self._resend(chat_id, user_id, conversation, delivery_ok)
+        if intent == "GET_STATUS":
+            return self._status(message, conversation)
         return {"type": "UNKNOWN", "message": "Saya belum memahami permintaan itu."}
 
     def _create_draft(self, chat_id: str, user_id: str | None, message: str, conversation: dict) -> dict:
@@ -119,6 +121,24 @@ class InvoiceBotSimulator:
             "invoice_number": invoice["invoice_number"],
             "delivery_id": delivery["id"],
             "delivery_status": delivery["status"],
+        }
+
+    def _status(self, message: str, conversation: dict) -> dict:
+        invoice = self._find_invoice_for_status(message, conversation)
+        if not invoice:
+            return {"type": "NO_INVOICE"}
+        delivery = self._latest_delivery(invoice["id"])
+        return {
+            "type": "INVOICE_STATUS",
+            "invoice_id": invoice["id"],
+            "invoice_number": invoice["invoice_number"],
+            "invoice_status": invoice["status"],
+            "delivery_status": delivery["status"] if delivery else None,
+            "provider_message_id": delivery["provider_message_id"] if delivery else None,
+            "provider_error_message": delivery["provider_error_message"] if delivery else None,
+            "grand_total": invoice["grand_total"],
+            "balance_due": invoice["balance_due"],
+            "pdf_path": invoice["pdf_path"],
         }
 
     def _draft_from_extraction(self, chat_id: str, user_id: str | None, raw_input: str, extracted: dict) -> dict:
@@ -237,3 +257,19 @@ class InvoiceBotSimulator:
             ):
                 return draft
         return None
+
+    def _find_invoice_for_status(self, message: str, conversation: dict) -> dict | None:
+        text = message.upper()
+        for invoice in self.store.invoices.values():
+            if invoice["invoice_number"].upper() in text and invoice["status"] != "VOID":
+                return invoice
+        invoice_id = conversation.get("last_invoice_id")
+        if invoice_id:
+            invoice = self.store.invoices.get(invoice_id)
+            if invoice and invoice["status"] != "VOID":
+                return invoice
+        return None
+
+    def _latest_delivery(self, invoice_id: int) -> dict | None:
+        deliveries = [delivery for delivery in self.store.deliveries if delivery["invoice_id"] == invoice_id]
+        return deliveries[-1] if deliveries else None

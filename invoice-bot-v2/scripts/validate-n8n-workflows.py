@@ -106,7 +106,7 @@ WORKFLOW_CONTRACTS = {
         },
         "edges": [("Execute Workflow Trigger", "Status Guard")],
         "code_contains": {
-            "Status Guard": ["invoice_number", "last_invoice_id"],
+            "Status Guard": ["invoice_number", "last_invoice_id", "status_lookup_requested"],
         },
     },
     "08-error-handler.json": {

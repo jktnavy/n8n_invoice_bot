@@ -12,7 +12,7 @@
     },
     {
       "parameters": {
-        "jsCode": "if (!$json.invoice_id && !$json.invoice_number && !$json.last_invoice_id) throw new Error('invoice identifier is required');\nreturn [{ json: $json }];"
+        "jsCode": "const invoiceId = $json.invoice_id || $json.last_invoice_id || null;\nconst invoiceNumber = $json.invoice_number || null;\nif (!invoiceId && !invoiceNumber) throw new Error('invoice identifier is required');\nreturn [{ json: { ...$json, invoice_id: invoiceId, invoice_number: invoiceNumber, status_lookup_requested: true } }];"
       },
       "id": "status-guard",
       "name": "Status Guard",
@@ -31,4 +31,3 @@
     "description": "Query database for invoice and latest delivery state. LLM must never guess status."
   }
 }
-

@@ -19,6 +19,10 @@ class MockProviderTest(unittest.TestCase):
         result = self.provider.classify_intent("oke gas")
         self.assertEqual(result["intent"], "APPROVE_DRAFT")
 
+    def test_classifies_status_invoice_as_status(self):
+        result = self.provider.classify_intent("status invoice")
+        self.assertEqual(result["intent"], "GET_STATUS")
+
     def test_extracts_pt_nusa_fixture(self):
         result = self.provider.extract_invoice(
             "Buat invoice PT Nusa Horizon, 2 medium tanggal 15 Harapan Indah ke Puncak 2,8 juta, tanggal 17 Puncak Jakarta 2,6 juta. Lunas."

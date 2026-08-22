@@ -43,4 +43,10 @@ from the full invoice total. `FULL_PAYMENT` always has zero balance due. These
 amounts are calculated by the deterministic workflow and persisted with the
 draft and final invoice.
 
+## Status
+
+Status requests must read stored invoice and latest delivery state. If the user
+does not mention an invoice number, the workflow uses the conversation's
+`last_invoice_id`. The bot must not guess delivery state from natural language.
+
 The offline workflow simulator in `services/workflow-sim` is an executable contract for these flows. n8n implementation should preserve the same observable behavior.

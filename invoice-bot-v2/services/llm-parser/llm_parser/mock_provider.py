@@ -11,12 +11,12 @@ class MockProvider:
             intent = "APPROVE_DRAFT"
         elif re.search(r"kirim\s+(ulang|lagi)|resend", text):
             intent = "RESEND_INVOICE"
+        elif re.search(r"status|terkirim", text):
+            intent = "GET_STATUS"
         elif re.search(r"ganti|ubah|revisi|jadi|tidak usah dp", text) or ("tanpa dp" in text and not re.search(r"buat|invoice|tagihan", text)):
             intent = "UPDATE_DRAFT"
         elif re.search(r"invoice|tagihan", text):
             intent = "CREATE_INVOICE"
-        elif re.search(r"status|terkirim", text):
-            intent = "GET_STATUS"
         else:
             intent = "UNKNOWN"
         return {"schema_version": "intent.v1", "intent": intent, "confidence": 1.0, "reason": "mock deterministic rule"}

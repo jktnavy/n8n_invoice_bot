@@ -66,6 +66,29 @@ class AcceptanceSimulatorTest(unittest.TestCase):
         self.assertEqual(len(bot.store.deliveries), 2)
         self.assertEqual(bot.store.deliveries[-1]["status"], "sent")
 
+    def test_status_reports_last_invoice_and_delivery_state(self):
+        bot = InvoiceBotSimulator()
+        bot.handle_message("chat-1", "user-1", CREATE_MESSAGE)
+        approved = bot.handle_message("chat-1", "user-1", "setuju")
+
+        status = bot.handle_message("chat-1", "user-1", "status invoice")
+        self.assertEqual(status["type"], "INVOICE_STATUS")
+        self.assertEqual(status["invoice_number"], approved["invoice_number"])
+        self.assertEqual(status["invoice_status"], "SENT")
+        self.assertEqual(status["delivery_status"], "sent")
+        self.assertEqual(status["provider_message_id"], "1001")
+
+    def test_status_reports_failed_delivery_error(self):
+        bot = InvoiceBotSimulator()
+        bot.handle_message("chat-1", "user-1", CREATE_MESSAGE)
+        failed = bot.handle_message("chat-1", "user-1", "setuju", delivery_ok=False)
+
+        status = bot.handle_message("chat-1", "user-1", f"status {failed['invoice_number']}")
+        self.assertEqual(status["type"], "INVOICE_STATUS")
+        self.assertEqual(status["invoice_status"], "DELIVERY_FAILED")
+        self.assertEqual(status["delivery_status"], "failed")
+        self.assertEqual(status["provider_error_message"], "Bad Request: chat not found")
+
     def test_scenario_d_duplicate_final_invoice_does_not_auto_create_new(self):
         bot = InvoiceBotSimulator()
         bot.handle_message("chat-1", "user-1", CREATE_MESSAGE)
@@ -89,6 +112,11 @@ class AcceptanceSimulatorTest(unittest.TestCase):
         result = bot.handle_message("chat-1", "user-1", "setuju")
         self.assertEqual(result["type"], "NO_ACTIVE_DRAFT")
         self.assertEqual(len(bot.store.invoices), 0)
+
+    def test_status_without_invoice_does_not_guess(self):
+        bot = InvoiceBotSimulator()
+        result = bot.handle_message("chat-1", "user-1", "status invoice")
+        self.assertEqual(result["type"], "NO_INVOICE")
 
     def test_sequence_increments_only_after_distinct_draft_approval(self):
         bot = InvoiceBotSimulator()
