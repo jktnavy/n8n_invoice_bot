@@ -13,6 +13,8 @@ class MockProvider:
             intent = "CANCEL_DRAFT"
         elif re.search(r"kirim\s+(ulang|lagi)|resend", text):
             intent = "RESEND_INVOICE"
+        elif re.search(r"lihat\s+detail|detail\s+invoice|tampilkan\s+invoice", text):
+            intent = "GET_INVOICE"
         elif re.search(r"status|terkirim", text):
             intent = "GET_STATUS"
         elif re.search(r"ganti|ubah|revisi|jadi|tidak usah dp", text) or ("tanpa dp" in text and not re.search(r"buat|invoice|tagihan", text)):

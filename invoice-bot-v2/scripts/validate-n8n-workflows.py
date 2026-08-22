@@ -25,7 +25,7 @@ WORKFLOW_CONTRACTS = {
         ],
         "code_contains": {
             "Normalize Telegram Message": ["telegram_chat_id", "correlation_id"],
-            "Intent Prefilter": ["CREATE_INVOICE", "APPROVE_DRAFT", "CANCEL_DRAFT", "UPDATE_DRAFT", "tidak usah dp"],
+            "Intent Prefilter": ["CREATE_INVOICE", "APPROVE_DRAFT", "CANCEL_DRAFT", "GET_INVOICE", "UPDATE_DRAFT", "tidak usah dp"],
         },
         "snippet_files": {
             "Normalize Telegram Message": "n8n/code/normalize-telegram-message.js",

@@ -128,7 +128,16 @@ class AcceptanceSimulatorTest(unittest.TestCase):
         duplicate = bot.handle_message("chat-1", "user-1", CREATE_MESSAGE)
         self.assertEqual(duplicate["type"], "DUPLICATE_INVOICE")
         self.assertEqual(duplicate["invoice_number"], "INV-0001/STA/VIII/2026")
+        self.assertIn("kirim ulang", duplicate["message"])
+        self.assertIn("lihat detail", duplicate["message"])
         self.assertEqual(len(bot.store.invoices), 1)
+
+        detail = bot.handle_message("chat-1", "user-1", "lihat detail invoice tadi")
+        self.assertEqual(detail["type"], "INVOICE_DETAIL")
+        self.assertEqual(detail["invoice_number"], "INV-0001/STA/VIII/2026")
+        self.assertEqual(detail["grand_total"], 10_800_000)
+        self.assertEqual(len(bot.store.invoices), 1)
+        self.assertAuditEventsInclude(bot, ["INVOICE_DETAIL_VIEWED"])
 
     def test_scenario_e_ambiguous_request_asks_missing_fields(self):
         bot = InvoiceBotSimulator()

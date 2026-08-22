@@ -55,6 +55,12 @@ Status requests must read stored invoice and latest delivery state. If the user
 does not mention an invoice number, the workflow uses the conversation's
 `last_invoice_id`. The bot must not guess delivery state from natural language.
 
+## Invoice Detail
+
+Detail requests read the stored invoice and items only. If the user does not
+mention an invoice number, the workflow uses `last_invoice_id`. Detail views do
+not create invoices, allocate numbers, render PDFs, or send documents.
+
 The offline workflow simulator in `services/workflow-sim` is an executable contract for these flows. n8n implementation should preserve the same observable behavior.
 
 ## Audit Events
@@ -65,4 +71,4 @@ flows must record at least `DRAFT_CREATED`, `PREVIEW_SENT`,
 `APPROVAL_RECEIVED`, `INVOICE_CREATED`, `PDF_GENERATED`, `DELIVERY_STARTED`,
 and `DELIVERY_SENT`. Failures use `ERROR` or the specific failure event, such as
 `DELIVERY_FAILED`. Draft cancellation records `DRAFT_CANCELLED`. Resend success
-records `INVOICE_RESENT`.
+records `INVOICE_RESENT`. Detail views record `INVOICE_DETAIL_VIEWED`.

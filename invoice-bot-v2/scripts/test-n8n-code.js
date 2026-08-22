@@ -74,6 +74,11 @@ const ambiguousCreateVerbIntent = runSnippet('n8n/code/intent-prefilter.js', {
 })[0].json;
 assert.strictEqual(ambiguousCreateVerbIntent.intent, 'UNKNOWN');
 
+const detailIntent = runSnippet('n8n/code/intent-prefilter.js', {
+  raw_message: 'lihat detail invoice tadi',
+})[0].json;
+assert.strictEqual(detailIntent.intent, 'GET_INVOICE');
+
 const calculated = runSnippet('n8n/code/calculate-invoice.js', invoice)[0].json;
 assert.strictEqual(calculated.items[0].line_total, 5600000);
 assert.strictEqual(calculated.items[1].line_total, 5200000);

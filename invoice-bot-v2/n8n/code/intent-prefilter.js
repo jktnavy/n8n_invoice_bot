@@ -8,6 +8,8 @@ if (approvals.has(text)) {
   intent = 'CANCEL_DRAFT';
 } else if (/kirim.*ulang|kirim.*lagi|resend/.test(text)) {
   intent = 'RESEND_INVOICE';
+} else if (/lihat.*detail|detail.*invoice|tampilkan.*invoice/.test(text)) {
+  intent = 'GET_INVOICE';
 } else if (/status|sudah terkirim|invoice .* mana/.test(text)) {
   intent = 'GET_STATUS';
 } else if (/ganti|ubah|revisi|jadi|tidak usah dp/.test(text) || (/tanpa dp/.test(text) && !/buat|invoice|tagihan/.test(text))) {

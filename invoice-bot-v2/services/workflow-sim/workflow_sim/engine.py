@@ -46,6 +46,8 @@ class InvoiceBotSimulator:
             return self._cancel_draft(chat_id, user_id, conversation, correlation_id)
         if intent == "RESEND_INVOICE":
             return self._resend(chat_id, user_id, conversation, delivery_ok, correlation_id)
+        if intent == "GET_INVOICE":
+            return self._invoice_detail(chat_id, user_id, message, conversation, correlation_id)
         if intent == "GET_STATUS":
             return self._status(chat_id, user_id, message, conversation, correlation_id)
         self._audit(correlation_id, "ERROR", "telegram_message", None, chat_id, user_id, message="Unknown intent")
@@ -82,7 +84,7 @@ class InvoiceBotSimulator:
             return {
                 "type": "DUPLICATE_INVOICE",
                 "invoice_number": duplicate_invoice["invoice_number"],
-                "message": "Invoice dengan data sama sudah ada.",
+                "message": "Invoice dengan data sama sudah ada. Mau kirim ulang, lihat detail, atau benar-benar buat invoice baru?",
             }
 
         active_duplicate = self._find_active_draft(chat_id, draft["content_fingerprint"])
@@ -200,6 +202,25 @@ class InvoiceBotSimulator:
             "delivery_status": delivery["status"] if delivery else None,
             "provider_message_id": delivery["provider_message_id"] if delivery else None,
             "provider_error_message": delivery["provider_error_message"] if delivery else None,
+            "grand_total": invoice["grand_total"],
+            "balance_due": invoice["balance_due"],
+            "pdf_path": invoice["pdf_path"],
+        }
+
+    def _invoice_detail(self, chat_id: str, user_id: str | None, message: str, conversation: dict, correlation_id: str) -> dict:
+        invoice = self._find_invoice_for_status(message, conversation)
+        if not invoice:
+            self._audit(correlation_id, "ERROR", "invoice", None, chat_id, user_id, message="Invoice detail not found")
+            return {"type": "NO_INVOICE"}
+
+        self._audit(correlation_id, "INVOICE_DETAIL_VIEWED", "invoice", invoice["id"], chat_id, user_id)
+        return {
+            "type": "INVOICE_DETAIL",
+            "invoice_id": invoice["id"],
+            "invoice_number": invoice["invoice_number"],
+            "customer_name": invoice["customer_name"],
+            "invoice_status": invoice["status"],
+            "items": [item.copy() for item in invoice["items"]],
             "grand_total": invoice["grand_total"],
             "balance_due": invoice["balance_due"],
             "pdf_path": invoice["pdf_path"],
