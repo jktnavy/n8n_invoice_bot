@@ -44,8 +44,14 @@ Planned workflows:
 
 Local Telegram development uses webhook mode through Cloudflare Tunnel. Polling/manual trigger is only for specific tests.
 
+`01-telegram-router` includes a production webhook entrypoint and a manual test
+trigger. Both feed the same normalized Telegram payload so local manual tests do
+not bypass chat ID and correlation ID validation.
+
 Deterministic snippets:
 
+- `intent-prefilter.js`
+- `normalize-telegram-message.js`
 - `apply-patch.js`
 - `calculate-invoice.js`
 - `content-fingerprint.js`

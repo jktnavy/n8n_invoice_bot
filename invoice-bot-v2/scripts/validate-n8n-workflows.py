@@ -13,17 +13,23 @@ WORKFLOW_CONTRACTS = {
     "01-telegram-router.json": {
         "name": "01-telegram-router",
         "nodes": {
+            "Telegram Webhook": "n8n-nodes-base.webhook",
             "Manual Test Trigger": "n8n-nodes-base.manualTrigger",
             "Normalize Telegram Message": "n8n-nodes-base.code",
             "Intent Prefilter": "n8n-nodes-base.code",
         },
         "edges": [
+            ("Telegram Webhook", "Normalize Telegram Message"),
             ("Manual Test Trigger", "Normalize Telegram Message"),
             ("Normalize Telegram Message", "Intent Prefilter"),
         ],
         "code_contains": {
             "Normalize Telegram Message": ["telegram_chat_id", "correlation_id"],
             "Intent Prefilter": ["CREATE_INVOICE", "APPROVE_DRAFT", "UPDATE_DRAFT", "tidak usah dp"],
+        },
+        "snippet_files": {
+            "Normalize Telegram Message": "n8n/code/normalize-telegram-message.js",
+            "Intent Prefilter": "n8n/code/intent-prefilter.js",
         },
     },
     "02-create-invoice-draft.json": {

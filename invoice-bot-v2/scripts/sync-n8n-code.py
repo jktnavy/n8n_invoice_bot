@@ -6,6 +6,10 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).resolve().parents[1]
 
 WORKFLOW_CODE_MAP = {
+    "01-telegram-router.json": {
+        "Normalize Telegram Message": "normalize-telegram-message.js",
+        "Intent Prefilter": "intent-prefilter.js",
+    },
     "02-create-invoice-draft.json": {
         "Calculate Invoice": "calculate-invoice.js",
         "Content Fingerprint": "content-fingerprint.js",

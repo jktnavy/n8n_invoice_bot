@@ -3,46 +3,100 @@
   "active": false,
   "nodes": [
     {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "telegram/invoice-bot-v2",
+        "responseMode": "onReceived",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "telegram-webhook",
+      "name": "Telegram Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        -160
+      ]
+    },
+    {
       "parameters": {},
       "id": "manual-test-trigger",
       "name": "Manual Test Trigger",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
-      "position": [0, 0]
+      "position": [
+        0,
+        120
+      ]
     },
     {
       "parameters": {
-        "jsCode": "const message = $json.message?.text || $json.text || '';\nconst chatId = $json.message?.chat?.id || $json.chat_id || null;\nconst userId = $json.message?.from?.id || $json.user_id || null;\nif (!chatId) throw new Error('Telegram chat.id is required');\nreturn [{ json: { raw_message: message, telegram_chat_id: String(chatId), telegram_user_id: userId ? String(userId) : null, correlation_id: crypto.randomUUID() } }];"
+        "jsCode": "const update = $json.body || $json;\nconst message = update.message || update.edited_message || {};\nconst text = message.text || update.text || '';\nconst chatId = message.chat?.id || update.chat_id || null;\nconst userId = message.from?.id || update.user_id || null;\nconst messageId = message.message_id || update.message_id || null;\nconst updateId = update.update_id || null;\n\nif (!chatId) {\n  throw new Error('Telegram chat.id is required');\n}\n\nreturn [\n  {\n    json: {\n      raw_message: String(text),\n      telegram_chat_id: String(chatId),\n      telegram_user_id: userId ? String(userId) : null,\n      telegram_message_id: messageId ? String(messageId) : null,\n      telegram_update_id: updateId ? String(updateId) : null,\n      correlation_id: crypto.randomUUID(),\n    },\n  },\n];\n"
       },
       "id": "normalize-telegram-message",
       "name": "Normalize Telegram Message",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [240, 0]
+      "position": [
+        240,
+        0
+      ]
     },
     {
       "parameters": {
-        "jsCode": "const text = ($json.raw_message || '').trim().toLowerCase();\nconst approvals = new Set(['setuju','iya','ya','oke','ok','gas','lanjut','buat','sudah benar','sip']);\nlet intent = 'UNKNOWN';\nif (approvals.has(text)) intent = 'APPROVE_DRAFT';\nelse if (/kirim.*ulang|kirim.*lagi|resend/.test(text)) intent = 'RESEND_INVOICE';\nelse if (/status|sudah terkirim|invoice .* mana/.test(text)) intent = 'GET_STATUS';\nelse if (/ganti|ubah|revisi|jadi|tidak usah dp/.test(text) || (/tanpa dp/.test(text) && !/buat|invoice|tagihan/.test(text))) intent = 'UPDATE_DRAFT';\nelse if (/invoice|tagihan/.test(text)) intent = 'CREATE_INVOICE';\nreturn [{ json: { ...$json, intent, confidence: intent === 'UNKNOWN' ? 0.2 : 0.7, intent_source: 'deterministic_prefilter' } }];"
+        "jsCode": "const text = ($json.raw_message || '').trim().toLowerCase();\nconst approvals = new Set(['setuju', 'iya', 'ya', 'oke', 'ok', 'gas', 'lanjut', 'buat', 'sudah benar', 'sip']);\n\nlet intent = 'UNKNOWN';\nif (approvals.has(text)) {\n  intent = 'APPROVE_DRAFT';\n} else if (/kirim.*ulang|kirim.*lagi|resend/.test(text)) {\n  intent = 'RESEND_INVOICE';\n} else if (/status|sudah terkirim|invoice .* mana/.test(text)) {\n  intent = 'GET_STATUS';\n} else if (/ganti|ubah|revisi|jadi|tidak usah dp/.test(text) || (/tanpa dp/.test(text) && !/buat|invoice|tagihan/.test(text))) {\n  intent = 'UPDATE_DRAFT';\n} else if (/invoice|tagihan/.test(text)) {\n  intent = 'CREATE_INVOICE';\n}\n\nreturn [\n  {\n    json: {\n      ...$json,\n      intent,\n      confidence: intent === 'UNKNOWN' ? 0.2 : 0.7,\n      intent_source: 'deterministic_prefilter',\n    },\n  },\n];\n"
       },
       "id": "intent-prefilter",
       "name": "Intent Prefilter",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [480, 0]
+      "position": [
+        480,
+        0
+      ]
     }
   ],
   "connections": {
+    "Telegram Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Telegram Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Manual Test Trigger": {
-      "main": [[{ "node": "Normalize Telegram Message", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Normalize Telegram Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Normalize Telegram Message": {
-      "main": [[{ "node": "Intent Prefilter", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Intent Prefilter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
     "executionOrder": "v1"
   },
   "staticData": {
-    "description": "Replace Manual Test Trigger with Telegram Trigger after credential setup. Router must load telegram_conversations and call LLM structured intent where prefilter is insufficient."
+    "description": "Telegram webhook is the production/local Cloudflare Tunnel entrypoint. Manual trigger is reserved for targeted tests. Router must load telegram_conversations and call LLM structured intent where prefilter is insufficient."
   }
 }
