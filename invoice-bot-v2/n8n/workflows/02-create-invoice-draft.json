@@ -1,12 +1,60 @@
 {
   "name": "02-create-invoice-draft",
-  "nodes": [],
-  "connections": {},
-  "settings": {
-    "executionOrder": "v1"
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "execute-workflow-trigger",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const required = ['customer_name', 'items'];\nfor (const field of required) if (!$json[field]) throw new Error(`${field} is required`);\nif (!Array.isArray($json.items) || $json.items.length === 0) throw new Error('at least one item is required');\nreturn [{ json: $json }];"
+      },
+      "id": "business-validation",
+      "name": "Business Validation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Paste n8n/code/calculate-invoice.js here in n8n UI or keep synchronized through import tooling.\nreturn $input.all();"
+      },
+      "id": "calculate-invoice",
+      "name": "Calculate Invoice",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Paste n8n/code/content-fingerprint.js here in n8n UI or keep synchronized through import tooling.\nreturn $input.all();"
+      },
+      "id": "content-fingerprint",
+      "name": "Content Fingerprint",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [720, 0]
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [[{ "node": "Business Validation", "type": "main", "index": 0 }]]
+    },
+    "Business Validation": {
+      "main": [[{ "node": "Calculate Invoice", "type": "main", "index": 0 }]]
+    },
+    "Calculate Invoice": {
+      "main": [[{ "node": "Content Fingerprint", "type": "main", "index": 0 }]]
+    }
   },
+  "settings": { "executionOrder": "v1" },
   "staticData": {
-    "description": "Extract invoice draft, validate schema, calculate totals, fingerprint, duplicate check, save draft, send preview."
+    "description": "Create draft flow. DB insert, duplicate check, conversation state, and Telegram preview nodes are added after credentials are configured."
   }
 }
 

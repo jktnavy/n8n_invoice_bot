@@ -24,3 +24,9 @@ Deterministic snippets:
 - `content-fingerprint.js`
 - `render-preview.js`
 - `telegram-delivery-result.js`
+
+`content-fingerprint.js` uses Node built-in `crypto`; set:
+
+```text
+NODE_FUNCTION_ALLOW_BUILTIN=crypto
+```

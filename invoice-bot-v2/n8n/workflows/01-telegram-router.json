@@ -1,12 +1,49 @@
 {
   "name": "01-telegram-router",
-  "nodes": [],
-  "connections": {},
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual-test-trigger",
+      "name": "Manual Test Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const message = $json.message?.text || $json.text || '';\nconst chatId = $json.message?.chat?.id || $json.chat_id || null;\nconst userId = $json.message?.from?.id || $json.user_id || null;\nif (!chatId) throw new Error('Telegram chat.id is required');\nreturn [{ json: { raw_message: message, telegram_chat_id: String(chatId), telegram_user_id: userId ? String(userId) : null, correlation_id: crypto.randomUUID() } }];"
+      },
+      "id": "normalize-telegram-message",
+      "name": "Normalize Telegram Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = ($json.raw_message || '').trim().toLowerCase();\nconst approvals = new Set(['setuju','iya','ya','oke','ok','gas','lanjut','buat','sudah benar','sip']);\nlet intent = 'UNKNOWN';\nif (approvals.has(text)) intent = 'APPROVE_DRAFT';\nelse if (/kirim.*ulang|kirim.*lagi|resend/.test(text)) intent = 'RESEND_INVOICE';\nelse if (/status|sudah terkirim|invoice .* mana/.test(text)) intent = 'GET_STATUS';\nelse if (/ganti|ubah|revisi|jadi/.test(text)) intent = 'UPDATE_DRAFT';\nelse if (/invoice|tagihan/.test(text)) intent = 'CREATE_INVOICE';\nreturn [{ json: { ...$json, intent, confidence: intent === 'UNKNOWN' ? 0.2 : 0.7, intent_source: 'deterministic_prefilter' } }];"
+      },
+      "id": "intent-prefilter",
+      "name": "Intent Prefilter",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 0]
+    }
+  ],
+  "connections": {
+    "Manual Test Trigger": {
+      "main": [[{ "node": "Normalize Telegram Message", "type": "main", "index": 0 }]]
+    },
+    "Normalize Telegram Message": {
+      "main": [[{ "node": "Intent Prefilter", "type": "main", "index": 0 }]]
+    }
+  },
   "settings": {
     "executionOrder": "v1"
   },
   "staticData": {
-    "description": "Telegram webhook router. Planned route: Telegram Trigger -> load conversation -> LLM intent -> switch intent."
+    "description": "Replace Manual Test Trigger with Telegram Trigger after credential setup. Router must load telegram_conversations and call LLM structured intent where prefilter is insufficient."
   }
 }
 

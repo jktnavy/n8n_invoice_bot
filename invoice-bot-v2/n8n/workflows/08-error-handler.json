@@ -1,12 +1,34 @@
 {
   "name": "08-error-handler",
-  "nodes": [],
-  "connections": {},
-  "settings": {
-    "executionOrder": "v1"
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "error-trigger",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const execution = $json.execution || {};\nconst workflow = $json.workflow || {};\nconst sanitized = {\n  correlation_id: $json.correlation_id || execution.id || crypto.randomUUID(),\n  event_type: 'ERROR',\n  workflow_name: workflow.name || null,\n  node_name: $json.node?.name || null,\n  error_type: $json.error?.name || 'Error',\n  error_message: String($json.error?.message || 'Unknown error').replace(/(token|password|api[_-]?key)=\\S+/ig, '$1=[redacted]'),\n};\nreturn [{ json: sanitized }];"
+      },
+      "id": "sanitize-error",
+      "name": "Sanitize Error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 0]
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [[{ "node": "Sanitize Error", "type": "main", "index": 0 }]]
+    }
   },
+  "settings": { "executionOrder": "v1" },
   "staticData": {
-    "description": "Centralized error workflow. Store sanitized workflow, node, correlation_id, error_type, error_message."
+    "description": "Centralized sanitized error handler. DB audit insert node should write to audit_logs."
   }
 }
 

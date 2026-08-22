@@ -1,12 +1,34 @@
 {
   "name": "03-update-invoice-draft",
-  "nodes": [],
-  "connections": {},
-  "settings": {
-    "executionOrder": "v1"
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "execute-workflow-trigger",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "if (!$json.active_draft_id) throw new Error('active_draft_id is required');\nif ($json.conversation_state !== 'AWAITING_APPROVAL') throw new Error('draft revision requires AWAITING_APPROVAL');\nreturn [{ json: $json }];"
+      },
+      "id": "guard-active-draft",
+      "name": "Guard Active Draft",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 0]
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [[{ "node": "Guard Active Draft", "type": "main", "index": 0 }]]
+    }
   },
+  "settings": { "executionOrder": "v1" },
   "staticData": {
-    "description": "Extract patch, update active draft only, recalculate, send new preview."
+    "description": "Revision flow updates active draft only, recalculates totals, fingerprints, sends new preview, and never allocates invoice number."
   }
 }
 
