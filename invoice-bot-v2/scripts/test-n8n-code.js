@@ -190,4 +190,20 @@ const delivery = runSnippet('n8n/code/telegram-delivery-result.js', {
 assert.strictEqual(delivery.delivery_status, 'sent');
 assert.strictEqual(delivery.provider_message_id, '12345');
 
+const sanitizedError = runSnippet('n8n/code/sanitize-error.js', {
+  execution: { id: 'exec-1' },
+  workflow: { name: '01-telegram-router' },
+  node: { name: 'Normalize Telegram Message' },
+  telegram_chat_id: '123456',
+  error: {
+    name: 'Error',
+    message: 'request failed token=secret password=hunter2 api_key=sk-test authorization=Bearer-secret',
+  },
+})[0].json;
+assert.strictEqual(sanitizedError.event_type, 'ERROR');
+assert.strictEqual(sanitizedError.correlation_id, 'exec-1');
+assert.strictEqual(sanitizedError.telegram_chat_id, '123456');
+assert.doesNotMatch(sanitizedError.message, /secret|hunter2|sk-test|Bearer-secret/);
+assert.match(sanitizedError.message, /token=\[redacted\]/);
+
 console.log(JSON.stringify({ n8n_code_tests: 'PASS', grand_total: calculated.grand_total, fingerprint: fingerprintA }));

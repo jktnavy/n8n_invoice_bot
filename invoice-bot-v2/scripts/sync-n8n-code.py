@@ -31,6 +31,9 @@ WORKFLOW_CODE_MAP = {
     "06-resend-invoice.json": {
         "Prepare Telegram Document": "prepare-telegram-document.js",
     },
+    "08-error-handler.json": {
+        "Sanitize Error": "sanitize-error.js",
+    },
 }
 
 

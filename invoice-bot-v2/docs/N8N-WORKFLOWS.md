@@ -58,6 +58,7 @@ Deterministic snippets:
 - `prepare-render-request.js`
 - `prepare-telegram-document.js`
 - `render-preview.js`
+- `sanitize-error.js`
 - `telegram-delivery-result.js`
 
 `03-update-invoice-draft` applies an allowed patch to the active draft, then

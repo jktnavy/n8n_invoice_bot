@@ -158,6 +158,9 @@ WORKFLOW_CONTRACTS = {
         "code_contains": {
             "Sanitize Error": ["redacted", "correlation_id", "ERROR"],
         },
+        "snippet_files": {
+            "Sanitize Error": "n8n/code/sanitize-error.js",
+        },
     },
 }
 

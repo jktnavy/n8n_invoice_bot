@@ -8,27 +8,42 @@
       "name": "Error Trigger",
       "type": "n8n-nodes-base.errorTrigger",
       "typeVersion": 1,
-      "position": [0, 0]
+      "position": [
+        0,
+        0
+      ]
     },
     {
       "parameters": {
-        "jsCode": "const execution = $json.execution || {};\nconst workflow = $json.workflow || {};\nconst sanitized = {\n  correlation_id: $json.correlation_id || execution.id || crypto.randomUUID(),\n  event_type: 'ERROR',\n  workflow_name: workflow.name || null,\n  node_name: $json.node?.name || null,\n  error_type: $json.error?.name || 'Error',\n  error_message: String($json.error?.message || 'Unknown error').replace(/(token|password|api[_-]?key)=\\S+/ig, '$1=[redacted]'),\n};\nreturn [{ json: sanitized }];"
+        "jsCode": "const execution = $json.execution || {};\nconst workflow = $json.workflow || {};\nconst node = $json.node || {};\nconst error = $json.error || {};\n\nconst rawMessage = String(error.message || 'Unknown error');\nconst redactedMessage = rawMessage.replace(\n  /(token|password|api[_-]?key|authorization)=\\S+/gi,\n  '$1=[redacted]',\n);\n\nreturn [\n  {\n    json: {\n      correlation_id: $json.correlation_id || execution.id || crypto.randomUUID(),\n      event_type: 'ERROR',\n      entity_type: $json.entity_type || null,\n      entity_id: $json.entity_id ? String($json.entity_id) : null,\n      telegram_chat_id: $json.telegram_chat_id ? String($json.telegram_chat_id) : null,\n      telegram_user_id: $json.telegram_user_id ? String($json.telegram_user_id) : null,\n      workflow_name: workflow.name || null,\n      node_name: node.name || null,\n      message: redactedMessage,\n      metadata: {\n        error_type: error.name || 'Error',\n        execution_id: execution.id || null,\n      },\n    },\n  },\n];\n"
       },
       "id": "sanitize-error",
       "name": "Sanitize Error",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [240, 0]
+      "position": [
+        240,
+        0
+      ]
     }
   ],
   "connections": {
     "Error Trigger": {
-      "main": [[{ "node": "Sanitize Error", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Sanitize Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "settings": { "executionOrder": "v1" },
+  "settings": {
+    "executionOrder": "v1"
+  },
   "staticData": {
     "description": "Centralized sanitized error handler. DB audit insert node should write to audit_logs."
   }
 }
-
