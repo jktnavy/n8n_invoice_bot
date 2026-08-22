@@ -36,3 +36,15 @@ COMMIT
 Do not use `SELECT MAX(invoice_number) + 1`.
 
 Runtime DB user should be scoped to `invoice_bot_v2`; see `database/create-runtime-user.example.sql`.
+
+Validate a real database bootstrap with:
+
+```bash
+export MYSQL_HOST=127.0.0.1
+export MYSQL_PORT=3306
+export MYSQL_DATABASE=invoice_bot_v2
+export MYSQL_USER=invoice_bot_v2
+read -rsp "MYSQL_PASSWORD: " MYSQL_PASSWORD
+export MYSQL_PASSWORD
+./scripts/validate-db.sh
+```

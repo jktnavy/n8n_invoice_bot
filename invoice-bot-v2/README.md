@@ -76,8 +76,7 @@ Host-safe checks:
 Renderer unit tests in container:
 
 ```bash
-docker build --target test -t invoice-renderer-test services/invoice-renderer
-docker run --rm invoice-renderer-test
+./scripts/test-renderer-container.sh
 ```
 
 Healthcheck:

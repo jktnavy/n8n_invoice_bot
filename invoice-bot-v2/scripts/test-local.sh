@@ -23,6 +23,10 @@ for file in "$ROOT_DIR"/n8n/code/*.js; do
   node --check "$file"
 done
 
+for file in "$ROOT_DIR"/scripts/*.sh; do
+  bash -n "$file"
+done
+
 if python3 -c 'import pytest, pydantic, fastapi, weasyprint, jinja2' >/dev/null 2>&1; then
   PYTHONPATH="$ROOT_DIR/services/invoice-renderer" \
     python3 -m pytest "$ROOT_DIR/services/invoice-renderer/tests" -q

@@ -16,11 +16,16 @@ Host-safe checks:
 ./scripts/test-local.sh
 ```
 
+Database bootstrap validation, when credentials are available:
+
+```bash
+./scripts/validate-db.sh
+```
+
 Renderer container tests:
 
 ```bash
-docker build --target test -t invoice-renderer-test services/invoice-renderer
-docker run --rm invoice-renderer-test
+./scripts/test-renderer-container.sh
 ```
 
 ## Integration
