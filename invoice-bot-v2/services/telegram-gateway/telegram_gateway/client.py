@@ -38,6 +38,18 @@ class TelegramClient:
     def get_me(self) -> TelegramResult:
         return self._request_json("getMe")
 
+    def get_webhook_info(self) -> TelegramResult:
+        return self._request_json("getWebhookInfo")
+
+    def set_webhook(self, webhook_url: str) -> TelegramResult:
+        if not webhook_url or not webhook_url.startswith("https://"):
+            raise ValueError("Telegram webhook URL must be HTTPS")
+        body = json.dumps({"url": webhook_url}).encode("utf-8")
+        return self._request_json("setWebhook", body, {"Content-Type": "application/json"})
+
+    def delete_webhook(self) -> TelegramResult:
+        return self._request_json("deleteWebhook", json.dumps({}).encode("utf-8"), {"Content-Type": "application/json"})
+
     def send_document(self, chat_id: str | int | None, pdf_path: str | Path, caption: str | None = None) -> TelegramResult:
         if chat_id is None or str(chat_id).strip() == "":
             raise ValueError("Telegram chat_id is required")
@@ -77,7 +89,7 @@ def _telegram_result(http_status: int | None, response: dict) -> TelegramResult:
     result = response.get("result") if isinstance(response.get("result"), dict) else {}
     message_id = result.get("message_id")
     return TelegramResult(
-        ok=ok and message_id is not None,
+        ok=ok and (message_id is not None or response.get("result") is True or isinstance(response.get("result"), dict)),
         http_status=http_status,
         provider_message_id=str(message_id) if message_id is not None else None,
         provider_error_code=None if ok else str(response.get("error_code", "")) or None,

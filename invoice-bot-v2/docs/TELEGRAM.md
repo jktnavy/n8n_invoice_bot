@@ -38,3 +38,14 @@ provider_response
 ```
 
 It rejects missing `chat_id` before making a request and does not decide retries or create invoices.
+
+Safe operational helpers:
+
+```bash
+./scripts/test-telegram.sh
+./scripts/telegram-webhook.sh info
+./scripts/telegram-webhook.sh set https://example.com/webhook
+./scripts/telegram-webhook.sh delete
+```
+
+The bot token is read from `TELEGRAM_BOT_TOKEN`; do not pass it as a CLI argument.

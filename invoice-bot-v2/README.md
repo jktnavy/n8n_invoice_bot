@@ -85,6 +85,12 @@ Healthcheck:
 ./scripts/healthcheck.sh
 ```
 
+Telegram webhook helper:
+
+```bash
+./scripts/telegram-webhook.sh info
+```
+
 CI workflow template: `ci/github-actions-invoice-bot-v2-ci.yml`
 
 ## Production Deployment

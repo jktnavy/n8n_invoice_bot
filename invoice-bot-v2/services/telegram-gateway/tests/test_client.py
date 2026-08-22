@@ -68,6 +68,28 @@ class TelegramClientTest(unittest.TestCase):
         self.assertIn("/getMe", captured["url"])
         self.assertTrue(result.ok)
 
+    def test_webhook_methods_use_expected_endpoints(self):
+        calls = []
+
+        def transport(url, body, headers):
+            calls.append((url, body, headers))
+            return 200, {"ok": True, "result": True}
+
+        client = TelegramClient("token-secret", transport=transport)
+        self.assertTrue(client.set_webhook("https://example.com/webhook").ok)
+        self.assertTrue(client.get_webhook_info().ok)
+        self.assertTrue(client.delete_webhook().ok)
+
+        self.assertIn("/setWebhook", calls[0][0])
+        self.assertIn(b"https://example.com/webhook", calls[0][1])
+        self.assertEqual(calls[0][2]["Content-Type"], "application/json")
+        self.assertIn("/getWebhookInfo", calls[1][0])
+        self.assertIn("/deleteWebhook", calls[2][0])
+
+    def test_set_webhook_requires_https(self):
+        with self.assertRaises(ValueError):
+            TelegramClient("token-secret", transport=lambda url, body, headers: (200, {})).set_webhook("http://example.com")
+
     def test_redact_url_hides_token(self):
         redacted = redact_url("https://api.telegram.org/bot123456:secret/sendDocument")
         self.assertNotIn("123456:secret", redacted)
@@ -76,4 +98,3 @@ class TelegramClientTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

@@ -25,7 +25,11 @@ check_http "n8n" "http://localhost:${N8N_PORT:-5678}/healthz"
 check_http "Invoice Renderer" "http://localhost:8000/health"
 
 if [[ -n "${TELEGRAM_BOT_TOKEN:-}" ]]; then
-  check_http "Telegram getMe" "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMe"
+  if PYTHONPATH="$ROOT_DIR/services/telegram-gateway" python3 -m telegram_gateway.cli get-me >/dev/null 2>&1; then
+    printf '%-18s PASS\n' "Telegram getMe"
+  else
+    printf '%-18s FAIL\n' "Telegram getMe"
+  fi
 else
   printf '%-18s SKIP\n' "Telegram getMe"
 fi
@@ -35,4 +39,3 @@ if [[ -n "${LLM_API_KEY:-}" ]]; then
 else
   printf '%-18s SKIP\n' "LLM Provider"
 fi
-
