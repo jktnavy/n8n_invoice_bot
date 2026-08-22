@@ -46,10 +46,15 @@ Local Telegram development uses webhook mode through Cloudflare Tunnel. Polling/
 
 Deterministic snippets:
 
+- `apply-patch.js`
 - `calculate-invoice.js`
 - `content-fingerprint.js`
 - `render-preview.js`
 - `telegram-delivery-result.js`
+
+`03-update-invoice-draft` applies an allowed patch to the active draft, then
+recalculates totals, refreshes the content fingerprint, and renders a new
+preview without allocating an invoice number.
 
 `content-fingerprint.js` uses Node built-in `crypto`; set:
 

@@ -87,6 +87,25 @@ const paymentPreview = runSnippet('n8n/code/render-preview.js', downPayment)[0].
 assert.match(paymentPreview, /DP: Rp1\.000\.000/);
 assert.match(paymentPreview, /Sisa pembayaran: Rp9\.800\.000/);
 
+const patchedTrip = runSnippet('n8n/code/apply-patch.js', {
+  active_draft: downPayment,
+  patches: [{ target: 'item:return_trip', field: 'trip_date', value: '2026-08-18' }],
+})[0].json;
+assert.strictEqual(patchedTrip.items[1].trip_date, '2026-08-18');
+assert.strictEqual(patchedTrip.revision_applied, true);
+
+const patchedPayment = runSnippet('n8n/code/apply-patch.js', {
+  active_draft: downPayment,
+  patches: [
+    { target: 'draft', field: 'payment_type', value: 'FULL_PAYMENT' },
+    { target: 'draft', field: 'down_payment_amount', value: 0 },
+  ],
+})[0].json;
+const recalculatedPayment = runSnippet('n8n/code/calculate-invoice.js', patchedPayment)[0].json;
+assert.strictEqual(recalculatedPayment.payment_type, 'FULL_PAYMENT');
+assert.strictEqual(recalculatedPayment.down_payment_amount, 0);
+assert.strictEqual(recalculatedPayment.balance_due, 0);
+
 const delivery = runSnippet('n8n/code/telegram-delivery-result.js', {
   telegram_response: { ok: true, result: { message_id: 12345 } },
 })[0].json;

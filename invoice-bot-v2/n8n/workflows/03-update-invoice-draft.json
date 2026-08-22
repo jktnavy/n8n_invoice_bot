@@ -8,7 +8,10 @@
       "name": "Execute Workflow Trigger",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1,
-      "position": [0, 0]
+      "position": [
+        0,
+        0
+      ]
     },
     {
       "parameters": {
@@ -18,17 +21,125 @@
       "name": "Guard Active Draft",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [240, 0]
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const draft = $json.active_draft || $json;\nconst patches = $json.patches || $json.patch?.patches || [];\n\nif (!Array.isArray(patches) || patches.length === 0) {\n  throw new Error('at least one patch is required');\n}\nif (!Array.isArray(draft.items) || draft.items.length === 0) {\n  throw new Error('active draft items are required');\n}\n\nconst updated = {\n  ...draft,\n  items: draft.items.map((item) => ({ ...item })),\n};\n\nfor (const operation of patches) {\n  if (operation.target === 'item:return_trip') {\n    const item = updated.items[updated.items.length - 1];\n    applyItemPatch(item, operation.field, operation.value);\n  } else if (operation.target === 'draft') {\n    applyDraftPatch(updated, operation.field, operation.value);\n  } else {\n    throw new Error(`unsupported patch target: ${operation.target}`);\n  }\n}\n\nreturn [{ json: { ...$json, ...updated, revision_applied: true } }];\n\nfunction applyItemPatch(item, field, value) {\n  if (!['trip_date', 'unit_price'].includes(field)) {\n    throw new Error(`unsupported item patch field: ${field}`);\n  }\n  if (field === 'unit_price') {\n    const numericValue = Number(value);\n    if (!Number.isInteger(numericValue) || numericValue < 0) {\n      throw new Error('unit_price patch must be a non-negative integer');\n    }\n    item.unit_price = numericValue;\n    return;\n  }\n  item[field] = value;\n}\n\nfunction applyDraftPatch(draft, field, value) {\n  if (!['payment_type', 'down_payment_amount'].includes(field)) {\n    throw new Error(`unsupported draft patch field: ${field}`);\n  }\n  if (field === 'payment_type') {\n    draft.payment_type = String(value).trim().toUpperCase();\n    return;\n  }\n  const numericValue = Number(value);\n  if (!Number.isInteger(numericValue) || numericValue < 0) {\n    throw new Error('down_payment_amount patch must be a non-negative integer');\n  }\n  draft.down_payment_amount = numericValue;\n}\n"
+      },
+      "id": "apply-patch",
+      "name": "Apply Patch",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $json.items || [];\nconst discount = Number($json.discount || 0);\nconst additionalFee = Number($json.additional_fee || 0);\nconst paymentType = String($json.payment_type || $json.payment?.type || 'UNSPECIFIED').trim().toUpperCase();\nconst downPaymentAmount = Number($json.down_payment_amount || $json.payment?.down_payment_amount || 0);\n\nif (discount < 0 || additionalFee < 0 || downPaymentAmount < 0) {\n  throw new Error('discount, additional_fee, and down_payment_amount must be non-negative');\n}\n\nlet subtotal = 0;\nconst calculatedItems = items.map((item, index) => {\n  const quantity = Number(item.quantity);\n  const unitPrice = Number(item.unit_price);\n  if (!Number.isInteger(quantity) || quantity <= 0) {\n    throw new Error(`item ${index + 1} quantity must be a positive integer`);\n  }\n  if (!Number.isInteger(unitPrice) || unitPrice < 0) {\n    throw new Error(`item ${index + 1} unit_price must be a non-negative integer`);\n  }\n  const lineTotal = quantity * unitPrice;\n  subtotal += lineTotal;\n  return {\n    ...item,\n    sort_order: index + 1,\n    quantity,\n    unit_price: unitPrice,\n    line_total: lineTotal,\n  };\n});\n\nconst grandTotal = subtotal - discount + additionalFee;\nif (grandTotal < 0) {\n  throw new Error('grand_total must be non-negative');\n}\nconst effectiveDownPayment = paymentType === 'FULL_PAYMENT' ? 0 : downPaymentAmount;\nif (effectiveDownPayment > grandTotal) {\n  throw new Error('down_payment_amount must not exceed grand_total');\n}\n\nconst balanceDue = paymentType === 'FULL_PAYMENT' ? 0 : grandTotal - effectiveDownPayment;\n\nreturn [\n  {\n    json: {\n      ...$json,\n      items: calculatedItems,\n      payment_type: paymentType,\n      subtotal,\n      discount,\n      additional_fee: additionalFee,\n      grand_total: grandTotal,\n      down_payment_amount: effectiveDownPayment,\n      balance_due: balanceDue,\n    },\n  },\n];\n"
+      },
+      "id": "calculate-invoice",
+      "name": "Calculate Invoice",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\n\nfunction normalizeText(value) {\n  if (value === null || value === undefined) return null;\n  return String(value).normalize('NFKC').trim().toLowerCase().replace(/\\s+/g, ' ');\n}\n\nfunction canonicalInt(value) {\n  if (value === null || value === undefined || value === '') return 0;\n  const normalized = String(value).trim().toLowerCase().replace(/\\s+/g, '');\n  if (normalized.includes('juta')) {\n    const amount = normalized.replace('rp', '').replace('juta', '').replace(',', '.');\n    return Math.round(Number.parseFloat(amount) * 1000000);\n  }\n  return Number.parseInt(normalized.replace(/[^\\d-]/g, ''), 10);\n}\n\nconst canonical = {\n  customer: normalizeText($json.customer_name || $json.customer?.name),\n  payment_type: String($json.payment_type || $json.payment?.type || '').trim().toUpperCase(),\n  down_payment_amount: canonicalInt($json.down_payment_amount || $json.payment?.down_payment_amount || 0),\n  discount: canonicalInt($json.discount || 0),\n  additional_fee: canonicalInt($json.additional_fee || 0),\n  items: ($json.items || []).map((item) => ({\n    trip_date: item.trip_date || null,\n    vehicle_type: normalizeText(item.vehicle_type),\n    quantity: canonicalInt(item.quantity),\n    pickup: normalizeText(item.pickup),\n    destination: normalizeText(item.destination),\n    unit_price: canonicalInt(item.unit_price),\n  })).sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))),\n};\n\nconst payload = JSON.stringify(canonical);\nconst contentFingerprint = crypto.createHash('sha256').update(payload).digest('hex');\n\nreturn [{ json: { ...$json, canonical_business_data: canonical, content_fingerprint: contentFingerprint } }];\n"
+      },
+      "id": "content-fingerprint",
+      "name": "Content Fingerprint",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "function rupiah(amount) {\n  return 'Rp' + Number(amount || 0).toLocaleString('id-ID');\n}\n\nfunction formatDate(value) {\n  if (!value) return '-';\n  return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(value));\n}\n\nconst lines = [\n  '📄 PRATINJAU INVOICE',\n  '',\n  'Kepada:',\n  $json.customer_name,\n  '',\n];\n\nfor (const item of $json.items || []) {\n  lines.push(formatDate(item.trip_date));\n  lines.push(`${item.vehicle_type}`);\n  lines.push(`${item.quantity} unit × ${rupiah(item.unit_price)}`);\n  lines.push(`= ${rupiah(item.line_total)}`);\n  lines.push(`${item.pickup || '-'} → ${item.destination || '-'}`);\n  lines.push('');\n}\n\nlines.push('TOTAL');\nlines.push(rupiah($json.grand_total));\nlines.push('');\nlines.push('Pembayaran:');\nlines.push($json.payment_type === 'FULL_PAYMENT' ? 'LUNAS / FULL PAYMENT' : $json.payment_type);\nif ($json.down_payment_amount) {\n  lines.push(`DP: ${rupiah($json.down_payment_amount)}`);\n}\nif ($json.balance_due) {\n  lines.push(`Sisa pembayaran: ${rupiah($json.balance_due)}`);\n}\n\nif (($json.included || []).length) {\n  lines.push('');\n  lines.push('Termasuk:');\n  for (const item of $json.included) lines.push(`✓ ${item}`);\n}\n\nif (($json.excluded || []).length) {\n  lines.push('');\n  lines.push('Tidak termasuk:');\n  for (const item of $json.excluded) lines.push(`- ${item}`);\n}\n\nlines.push('');\nlines.push('Sudah benar?');\nlines.push('Balas: setuju atau tulis revisinya.');\n\nreturn [{ json: { ...$json, preview_text: lines.join('\\n') } }];\n"
+      },
+      "id": "render-preview",
+      "name": "Render Preview",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        0
+      ]
     }
   ],
   "connections": {
     "Execute Workflow Trigger": {
-      "main": [[{ "node": "Guard Active Draft", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Guard Active Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guard Active Draft": {
+      "main": [
+        [
+          {
+            "node": "Apply Patch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apply Patch": {
+      "main": [
+        [
+          {
+            "node": "Calculate Invoice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Invoice": {
+      "main": [
+        [
+          {
+            "node": "Content Fingerprint",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Content Fingerprint": {
+      "main": [
+        [
+          {
+            "node": "Render Preview",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "settings": { "executionOrder": "v1" },
+  "settings": {
+    "executionOrder": "v1"
+  },
   "staticData": {
     "description": "Revision flow updates active draft only, recalculates totals, fingerprints, sends new preview, and never allocates invoice number."
   }
 }
-

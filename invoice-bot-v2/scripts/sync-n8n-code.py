@@ -11,6 +11,12 @@ WORKFLOW_CODE_MAP = {
         "Content Fingerprint": "content-fingerprint.js",
         "Render Preview": "render-preview.js",
     },
+    "03-update-invoice-draft.json": {
+        "Apply Patch": "apply-patch.js",
+        "Calculate Invoice": "calculate-invoice.js",
+        "Content Fingerprint": "content-fingerprint.js",
+        "Render Preview": "render-preview.js",
+    },
     "05-send-invoice.json": {
         "Parse Telegram Delivery Result": "telegram-delivery-result.js",
     }

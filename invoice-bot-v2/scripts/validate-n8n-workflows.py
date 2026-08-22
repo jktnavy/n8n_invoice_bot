@@ -52,10 +52,26 @@ WORKFLOW_CONTRACTS = {
         "nodes": {
             "Execute Workflow Trigger": "n8n-nodes-base.executeWorkflowTrigger",
             "Guard Active Draft": "n8n-nodes-base.code",
+            "Apply Patch": "n8n-nodes-base.code",
+            "Calculate Invoice": "n8n-nodes-base.code",
+            "Content Fingerprint": "n8n-nodes-base.code",
+            "Render Preview": "n8n-nodes-base.code",
         },
-        "edges": [("Execute Workflow Trigger", "Guard Active Draft")],
+        "edges": [
+            ("Execute Workflow Trigger", "Guard Active Draft"),
+            ("Guard Active Draft", "Apply Patch"),
+            ("Apply Patch", "Calculate Invoice"),
+            ("Calculate Invoice", "Content Fingerprint"),
+            ("Content Fingerprint", "Render Preview"),
+        ],
         "code_contains": {
             "Guard Active Draft": ["active_draft_id", "AWAITING_APPROVAL"],
+        },
+        "snippet_files": {
+            "Apply Patch": "n8n/code/apply-patch.js",
+            "Calculate Invoice": "n8n/code/calculate-invoice.js",
+            "Content Fingerprint": "n8n/code/content-fingerprint.js",
+            "Render Preview": "n8n/code/render-preview.js",
         },
     },
     "04-approve-invoice.json": {
