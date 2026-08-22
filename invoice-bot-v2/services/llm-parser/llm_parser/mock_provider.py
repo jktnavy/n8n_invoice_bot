@@ -9,6 +9,8 @@ class MockProvider:
         approvals = {"setuju", "iya", "ya", "oke", "ok", "gas", "lanjut", "sudah benar", "sip", "oke gas"}
         if text in approvals:
             intent = "APPROVE_DRAFT"
+        elif re.search(r"\b(help|bantuan|cara pakai|menu|panduan)\b", text):
+            intent = "HELP"
         elif re.search(r"\b(batal|cancel|batalkan|void)\b", text) and (
             re.search(r"\binv-\d{4}/sta/[ivxlcdm]+/\d{4}\b", text) or re.search(r"\b(final|sudah jadi|sudah dibuat)\b", text)
         ):

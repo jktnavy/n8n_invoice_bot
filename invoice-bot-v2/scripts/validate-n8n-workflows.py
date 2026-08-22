@@ -31,6 +31,7 @@ WORKFLOW_CONTRACTS = {
                 "CANCEL_DRAFT",
                 "CANCEL_INVOICE",
                 "GET_INVOICE",
+                "HELP",
                 "UPDATE_DRAFT",
                 "tidak usah dp",
             ],

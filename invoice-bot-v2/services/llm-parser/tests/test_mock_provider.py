@@ -19,6 +19,10 @@ class MockProviderTest(unittest.TestCase):
         result = self.provider.classify_intent("oke gas")
         self.assertEqual(result["intent"], "APPROVE_DRAFT")
 
+    def test_classifies_help(self):
+        result = self.provider.classify_intent("bantuan cara pakai")
+        self.assertEqual(result["intent"], "HELP")
+
     def test_classifies_cancel_draft(self):
         result = self.provider.classify_intent("batalkan invoice ini")
         self.assertEqual(result["intent"], "CANCEL_DRAFT")

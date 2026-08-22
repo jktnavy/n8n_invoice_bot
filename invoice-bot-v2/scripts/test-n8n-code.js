@@ -74,6 +74,11 @@ const cancelFinalIntent = runSnippet('n8n/code/intent-prefilter.js', {
 })[0].json;
 assert.strictEqual(cancelFinalIntent.intent, 'CANCEL_INVOICE');
 
+const helpIntent = runSnippet('n8n/code/intent-prefilter.js', {
+  raw_message: 'bantuan cara pakai',
+})[0].json;
+assert.strictEqual(helpIntent.intent, 'HELP');
+
 const ambiguousCreateVerbIntent = runSnippet('n8n/code/intent-prefilter.js', {
   raw_message: 'buat',
 })[0].json;

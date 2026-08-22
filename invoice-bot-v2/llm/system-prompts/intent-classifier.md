@@ -11,5 +11,5 @@ Rules:
 - Use `APPROVE_DRAFT` for natural approvals such as `setuju`, `ok`, `oke`, `lanjut`, `gas`, `sudah benar`.
 - Use `UPDATE_DRAFT` for corrections to an active draft.
 - Use `RESEND_INVOICE` for requests to send an existing invoice again.
+- Use `HELP` for requests such as `bantuan`, `help`, `menu`, `cara pakai`, or `panduan`.
 - Use `UNKNOWN` when the message is not related to invoice operations.
-

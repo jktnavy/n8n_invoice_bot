@@ -52,6 +52,8 @@ class InvoiceBotSimulator:
             return self._invoice_detail(chat_id, user_id, message, conversation, correlation_id)
         if intent == "GET_STATUS":
             return self._status(chat_id, user_id, message, conversation, correlation_id)
+        if intent == "HELP":
+            return self._help(chat_id, user_id, correlation_id)
         self._audit(correlation_id, "ERROR", "telegram_message", None, chat_id, user_id, message="Unknown intent")
         return {"type": "UNKNOWN", "message": "Saya belum memahami permintaan itu."}
 
@@ -245,6 +247,14 @@ class InvoiceBotSimulator:
             "balance_due": invoice["balance_due"],
             "pdf_path": invoice["pdf_path"],
         }
+
+    def _help(self, chat_id: str, user_id: str | None, correlation_id: str) -> dict:
+        message = (
+            "Saya bisa bantu buat invoice dari bahasa bebas. Kirim data perjalanan, revisi draft sebelum setuju, "
+            "ketik setuju untuk membuat PDF final, atau minta status/detail/kirim ulang invoice yang sudah dibuat."
+        )
+        self._audit(correlation_id, "HELP_SENT", "telegram_message", None, chat_id, user_id)
+        return {"type": "HELP", "message": message}
 
     def _draft_from_extraction(self, chat_id: str, user_id: str | None, raw_input: str, extracted: dict) -> dict:
         item_inputs = [

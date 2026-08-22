@@ -69,6 +69,11 @@ Detail requests read the stored invoice and items only. If the user does not
 mention an invoice number, the workflow uses `last_invoice_id`. Detail views do
 not create invoices, allocate numbers, render PDFs, or send documents.
 
+## Help
+
+Help requests return concise usage guidance and must not create drafts, allocate
+invoice numbers, render PDFs, send documents, or modify invoice state.
+
 The offline workflow simulator in `services/workflow-sim` is an executable contract for these flows. n8n implementation should preserve the same observable behavior.
 
 ## Audit Events
@@ -80,4 +85,4 @@ flows must record at least `DRAFT_CREATED`, `PREVIEW_SENT`,
 and `DELIVERY_SENT`. Failures use `ERROR` or the specific failure event, such as
 `DELIVERY_FAILED`. Draft cancellation records `DRAFT_CANCELLED`. Resend success
 records `INVOICE_RESENT`. Detail views record `INVOICE_DETAIL_VIEWED`. Final
-invoice voids record `INVOICE_VOIDED`.
+invoice voids record `INVOICE_VOIDED`. Help responses record `HELP_SENT`.

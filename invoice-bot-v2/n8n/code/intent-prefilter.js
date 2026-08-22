@@ -4,6 +4,8 @@ const approvals = new Set(['setuju', 'iya', 'ya', 'oke', 'ok', 'gas', 'lanjut', 
 let intent = 'UNKNOWN';
 if (approvals.has(text)) {
   intent = 'APPROVE_DRAFT';
+} else if (/\b(help|bantuan|cara pakai|menu|panduan)\b/.test(text)) {
+  intent = 'HELP';
 } else if (/\b(batal|cancel|batalkan|void)\b/.test(text) && (/\binv-\d{4}\/sta\/[ivxlcdm]+\/\d{4}\b/.test(text) || /\b(final|sudah jadi|sudah dibuat)\b/.test(text))) {
   intent = 'CANCEL_INVOICE';
 } else if (/\b(batal|cancel|batalkan)\b/.test(text)) {

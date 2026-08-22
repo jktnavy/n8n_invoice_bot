@@ -153,6 +153,17 @@ class AcceptanceSimulatorTest(unittest.TestCase):
         self.assertEqual(result["type"], "NO_ACTIVE_DRAFT")
         self.assertEqual(len(bot.store.invoices), 0)
 
+    def test_help_does_not_create_or_modify_invoice_state(self):
+        bot = InvoiceBotSimulator()
+        result = bot.handle_message("chat-1", "user-1", "bantuan cara pakai")
+
+        self.assertEqual(result["type"], "HELP")
+        self.assertIn("buat invoice", result["message"])
+        self.assertEqual(len(bot.store.drafts), 0)
+        self.assertEqual(len(bot.store.invoices), 0)
+        self.assertIsNone(bot.store.conversations[("chat-1", "user-1")]["active_draft_id"])
+        self.assertAuditEventsInclude(bot, ["HELP_SENT"])
+
     def test_cancel_draft_clears_active_draft_without_invoice_number(self):
         bot = InvoiceBotSimulator()
         preview = bot.handle_message("chat-1", "user-1", CREATE_MESSAGE)
