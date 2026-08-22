@@ -18,6 +18,12 @@ Host-safe checks:
 ./scripts/test-local.sh
 ```
 
+Static config validation is included in `test-local` and can be run directly:
+
+```bash
+./scripts/validate-config-static.py
+```
+
 Database bootstrap validation, when credentials are available:
 
 ```bash

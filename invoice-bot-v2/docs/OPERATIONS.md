@@ -10,6 +10,14 @@ Run before production changes:
 
 Record the actual environment in deployment notes before choosing ports, paths, reverse proxy config, or service manager.
 
+Run local/VPS V2 preflight checks:
+
+```bash
+./scripts/preflight-readiness.sh
+```
+
+This reports required command availability, planned port usage, static config validation, schema invariants, and n8n workflow export validity. It is read-only.
+
 ## Runtime Services
 
 Recommended native services:
@@ -39,4 +47,3 @@ invoice_bot_v2
 ```
 
 Do not dump unrelated production databases as part of normal V2 operations.
-

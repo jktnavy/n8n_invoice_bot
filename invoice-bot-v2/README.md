@@ -85,6 +85,12 @@ Healthcheck:
 ./scripts/healthcheck.sh
 ```
 
+Read-only preflight:
+
+```bash
+./scripts/preflight-readiness.sh
+```
+
 Telegram webhook helper:
 
 ```bash

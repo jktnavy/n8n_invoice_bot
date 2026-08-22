@@ -6,6 +6,7 @@ Native production is preferred. Do not use this as a blind script; perform read-
 
 ```bash
 ./scripts/discover-environment.sh
+./scripts/preflight-readiness.sh
 ss -lntup
 systemctl --type=service --state=running
 ```
@@ -54,4 +55,3 @@ systemctl reload nginx
 ```
 
 Only add isolated config. Do not replace global config or restart unrelated services.
-

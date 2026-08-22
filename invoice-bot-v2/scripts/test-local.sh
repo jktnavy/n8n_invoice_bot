@@ -18,6 +18,7 @@ PYTHONPATH="$ROOT_DIR/services/telegram-gateway" \
   python3 -m unittest discover -s "$ROOT_DIR/services/telegram-gateway/tests" -v
 
 python3 "$ROOT_DIR/scripts/validate-fixture.py"
+python3 "$ROOT_DIR/scripts/validate-config-static.py"
 python3 "$ROOT_DIR/scripts/validate-schema-static.py"
 python3 "$ROOT_DIR/scripts/sync-n8n-code.py" --check
 python3 "$ROOT_DIR/scripts/validate-n8n-workflows.py"
