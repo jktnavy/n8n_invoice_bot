@@ -15,6 +15,11 @@ Validate exports:
 ./scripts/validate-n8n-workflows.py
 ```
 
+The validator checks source-level import readiness only: required workflow
+exports, workflow names, node types, required edges, synchronized Code-node
+snippets, and connection graph integrity. A live n8n import/execution test is
+still a separate runtime gate.
+
 Planned workflows:
 
 ```text
