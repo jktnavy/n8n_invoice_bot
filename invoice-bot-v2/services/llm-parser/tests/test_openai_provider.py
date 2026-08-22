@@ -1,6 +1,6 @@
 import unittest
 
-from llm_parser.openai_provider import OpenAIProvider, _parse_structured_response
+from llm_parser.openai_provider import OpenAIProvider, _parse_structured_response, _validate_structured_payload
 from llm_parser.providers import ProviderConfig, provider_from_env
 
 
@@ -64,7 +64,42 @@ class OpenAIProviderTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             _parse_structured_response({"output": []})
 
+    def test_structured_response_is_validated_against_schema(self):
+        schema = {
+            "type": "object",
+            "additionalProperties": False,
+            "required": ["schema_version", "intent", "confidence"],
+            "properties": {
+                "schema_version": {"const": "intent.v1"},
+                "intent": {"type": "string", "enum": ["CREATE_INVOICE", "UNKNOWN"]},
+                "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+            },
+        }
+
+        _validate_structured_payload(
+            {"schema_version": "intent.v1", "intent": "CREATE_INVOICE", "confidence": 0.9},
+            schema,
+        )
+
+        invalid_payloads = [
+            {"schema_version": "intent.v1", "intent": "CREATE_INVOICE"},
+            {"schema_version": "intent.v1", "intent": "DELETE_DATABASE", "confidence": 0.9},
+            {"schema_version": "intent.v1", "intent": "UNKNOWN", "confidence": 2},
+            {"schema_version": "intent.v1", "intent": "UNKNOWN", "confidence": 0.5, "sql": "DROP"},
+        ]
+        for payload in invalid_payloads:
+            with self.subTest(payload=payload):
+                with self.assertRaises(ValueError):
+                    _validate_structured_payload(payload, schema)
+
+    def test_provider_rejects_malformed_structured_output(self):
+        def transport(payload, api_key):
+            return {"output_text": '{"schema_version":"intent.v1","intent":"DELETE_DATABASE","confidence":0.9}'}
+
+        provider = OpenAIProvider(ProviderConfig("openai", "gpt-test", "test-key"), transport=transport)
+        with self.assertRaises(ValueError):
+            provider.classify_intent("buat invoice")
+
 
 if __name__ == "__main__":
     unittest.main()
-

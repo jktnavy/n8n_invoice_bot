@@ -74,7 +74,9 @@ class OpenAIProvider:
             },
         }
         response = self.transport(request_payload, self.config.api_key)
-        return _parse_structured_response(response)
+        parsed = _parse_structured_response(response)
+        _validate_structured_payload(parsed, schema)
+        return parsed
 
     def _default_transport(self, payload: dict, api_key: str) -> dict:
         request = urllib.request.Request(
@@ -106,6 +108,63 @@ def _parse_structured_response(response: dict) -> dict:
     raise ValueError("OpenAI response did not contain structured output text")
 
 
+def _validate_structured_payload(value: object, schema: dict, path: str = "$") -> None:
+    if "const" in schema and value != schema["const"]:
+        raise ValueError(f"{path}: expected constant {schema['const']!r}")
+
+    if "enum" in schema and value not in schema["enum"]:
+        raise ValueError(f"{path}: unexpected value {value!r}")
+
+    expected_type = schema.get("type")
+    if expected_type is not None and not _matches_type(value, expected_type):
+        raise ValueError(f"{path}: expected type {expected_type!r}")
+
+    if isinstance(value, (int, float)) and "minimum" in schema and value < schema["minimum"]:
+        raise ValueError(f"{path}: value below minimum {schema['minimum']!r}")
+
+    if isinstance(value, (int, float)) and "maximum" in schema and value > schema["maximum"]:
+        raise ValueError(f"{path}: value above maximum {schema['maximum']!r}")
+
+    if isinstance(value, dict):
+        required = schema.get("required", [])
+        for key in required:
+            if key not in value:
+                raise ValueError(f"{path}: missing required property {key!r}")
+
+        properties = schema.get("properties", {})
+        if schema.get("additionalProperties") is False:
+            extra_keys = sorted(set(value) - set(properties))
+            if extra_keys:
+                raise ValueError(f"{path}: unexpected properties {extra_keys!r}")
+
+        for key, child_schema in properties.items():
+            if key in value:
+                _validate_structured_payload(value[key], child_schema, f"{path}.{key}")
+
+    if isinstance(value, list) and "items" in schema:
+        for index, item in enumerate(value):
+            _validate_structured_payload(item, schema["items"], f"{path}[{index}]")
+
+
+def _matches_type(value: object, expected_type: str | list[str]) -> bool:
+    expected_types = expected_type if isinstance(expected_type, list) else [expected_type]
+    for item in expected_types:
+        if item == "null" and value is None:
+            return True
+        if item == "object" and isinstance(value, dict):
+            return True
+        if item == "array" and isinstance(value, list):
+            return True
+        if item == "string" and isinstance(value, str):
+            return True
+        if item == "integer" and isinstance(value, int) and not isinstance(value, bool):
+            return True
+        if item == "number" and isinstance(value, (int, float)) and not isinstance(value, bool):
+            return True
+        if item == "boolean" and isinstance(value, bool):
+            return True
+    return False
+
+
 def _redact(value: str) -> str:
     return value.replace("Bearer ", "Bearer [redacted] ")
-
