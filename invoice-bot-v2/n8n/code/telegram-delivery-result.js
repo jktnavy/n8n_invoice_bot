@@ -1,10 +1,10 @@
 const response = $json.telegram_response || $json;
 const ok = response.ok === true && response.result && response.result.message_id;
 const errorCode = response.error_code ?? $json.http_status ?? null;
-const redactSensitive = (value) => String(value).replace(
-  /(token|password|api[_-]?key|authorization)=\S+/gi,
-  '$1=[redacted]',
-);
+const redactSensitive = (value) => String(value)
+  .replace(/(token|password|api[_-]?key|authorization)\s*[:=]\s*\S+/gi, '$1=[redacted]')
+  .replace(/\bsk-[A-Za-z0-9_-]{8,}\b/g, 'sk-[redacted]')
+  .replace(/\b\d{6,}:[A-Za-z0-9_-]{20,}\b/g, '[redacted-telegram-token]');
 const sanitizeValue = (value) => {
   if (typeof value === 'string') return redactSensitive(value);
   if (Array.isArray(value)) return value.map(sanitizeValue);

@@ -222,8 +222,8 @@ const failedDelivery = runSnippet('n8n/code/telegram-delivery-result.js', {
   telegram_response: {
     ok: false,
     error_code: 400,
-    description: 'Bad Request: chat not found token=secret api_key=sk-test',
-    parameters: { authorization: 'authorization=Bearer-secret' },
+    description: 'Bad Request: chat not found token=secret api_key=sk-test-12345678 Authorization: Bearer-secret',
+    parameters: { authorization: 'authorization: Bearer-nested-secret', bot_token: '123456789:' + 'abcdefghijklmnopqrstuvwxyz' },
   },
 })[0].json;
 assert.strictEqual(failedDelivery.delivery_status, 'failed');
@@ -232,7 +232,9 @@ assert.strictEqual(failedDelivery.http_status, 400);
 assert.strictEqual(failedDelivery.provider_error_code, '400');
 assert.match(failedDelivery.provider_error_message, /chat not found/);
 assert.doesNotMatch(failedDelivery.provider_error_message, /secret|sk-test/);
-assert.doesNotMatch(JSON.stringify(failedDelivery.provider_response), /secret|sk-test|Bearer-secret/);
+const failedDeliveryResponseText = JSON.stringify(failedDelivery.provider_response);
+assert.doesNotMatch(failedDeliveryResponseText, /secret|sk-test|Bearer-secret|Bearer-nested-secret/);
+assert.doesNotMatch(failedDeliveryResponseText, new RegExp('123456789:' + 'abcdefghijklmnopqrstuvwxyz'));
 assert.match(failedDelivery.provider_error_message, /token=\[redacted\]/);
 
 const missingMessageIdDelivery = runSnippet('n8n/code/telegram-delivery-result.js', {
@@ -249,13 +251,14 @@ const sanitizedError = runSnippet('n8n/code/sanitize-error.js', {
   telegram_chat_id: '123456',
   error: {
     name: 'Error',
-    message: 'request failed token=secret password=hunter2 api_key=sk-test authorization=Bearer-secret',
+    message: 'request failed token=secret password: hunter2 api_key=sk-test-12345678 Authorization: Bearer-secret ' + '123456789:' + 'abcdefghijklmnopqrstuvwxyz',
   },
 })[0].json;
 assert.strictEqual(sanitizedError.event_type, 'ERROR');
 assert.strictEqual(sanitizedError.correlation_id, 'exec-1');
 assert.strictEqual(sanitizedError.telegram_chat_id, '123456');
 assert.doesNotMatch(sanitizedError.message, /secret|hunter2|sk-test|Bearer-secret/);
+assert.doesNotMatch(sanitizedError.message, new RegExp('123456789:' + 'abcdefghijklmnopqrstuvwxyz'));
 assert.match(sanitizedError.message, /token=\[redacted\]/);
 
 console.log(JSON.stringify({ n8n_code_tests: 'PASS', grand_total: calculated.grand_total, fingerprint: fingerprintA }));

@@ -4,10 +4,11 @@ const node = $json.node || {};
 const error = $json.error || {};
 
 const rawMessage = String(error.message || 'Unknown error');
-const redactedMessage = rawMessage.replace(
-  /(token|password|api[_-]?key|authorization)=\S+/gi,
-  '$1=[redacted]',
-);
+const redactSensitive = (value) => String(value)
+  .replace(/(token|password|api[_-]?key|authorization)\s*[:=]\s*\S+/gi, '$1=[redacted]')
+  .replace(/\bsk-[A-Za-z0-9_-]{8,}\b/g, 'sk-[redacted]')
+  .replace(/\b\d{6,}:[A-Za-z0-9_-]{20,}\b/g, '[redacted-telegram-token]');
+const redactedMessage = redactSensitive(rawMessage);
 
 return [
   {

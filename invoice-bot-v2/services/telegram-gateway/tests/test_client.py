@@ -43,11 +43,15 @@ class TelegramClientTest(unittest.TestCase):
 
     def test_provider_error_is_redacted_before_persistence(self):
         def transport(url, body, headers):
+            token_like_value = "123456789:" + "abcdefghijklmnopqrstuvwxyz"
             return 400, {
                 "ok": False,
                 "error_code": 400,
-                "description": "Bad Request token=secret api_key=sk-test",
-                "parameters": {"authorization": "authorization=Bearer-secret"},
+                "description": "Bad Request token=secret api_key=sk-test-12345678 Authorization: Bearer-secret",
+                "parameters": {
+                    "authorization": "authorization: Bearer-nested-secret",
+                    "bot_token": token_like_value,
+                },
             }
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -60,6 +64,8 @@ class TelegramClientTest(unittest.TestCase):
         self.assertNotIn("sk-test", result.provider_error_message)
         self.assertIn("token=[redacted]", result.provider_error_message)
         self.assertNotIn("Bearer-secret", str(result.provider_response))
+        self.assertNotIn("Bearer-nested-secret", str(result.provider_response))
+        self.assertNotIn("123456789:" + "abcdefghijklmnopqrstuvwxyz", str(result.provider_response))
 
     def test_send_document_requires_provider_message_id(self):
         def transport(url, body, headers):

@@ -117,7 +117,9 @@ def _sanitize_provider_response(value):
 
 
 def _redact_sensitive_text(value: object) -> str:
-    return re.sub(r"(token|password|api[_-]?key|authorization)=\S+", r"\1=[redacted]", str(value), flags=re.IGNORECASE)
+    text = re.sub(r"(token|password|api[_-]?key|authorization)\s*[:=]\s*\S+", r"\1=[redacted]", str(value), flags=re.IGNORECASE)
+    text = re.sub(r"\bsk-[A-Za-z0-9_-]{8,}\b", "sk-[redacted]", text)
+    return re.sub(r"\b\d{6,}:[A-Za-z0-9_-]{20,}\b", "[redacted-telegram-token]", text)
 
 
 def _multipart_body(fields: dict[str, str], file_field: str, path: Path, boundary: str) -> bytes:
