@@ -10,6 +10,7 @@ REQUIRED_SOURCE_ARTIFACTS = {
     "telegram_gateway": "services/telegram-gateway/telegram_gateway/client.py",
     "n8n_workflows": "n8n/workflows/01-telegram-router.json",
     "acceptance_sim": "services/workflow-sim/tests/test_acceptance_sim.py",
+    "renderer_contract": "scripts/validate-renderer-contract.py",
     "native_deploy": "deploy/systemd/invoice-renderer.service",
 }
 
@@ -46,4 +47,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
