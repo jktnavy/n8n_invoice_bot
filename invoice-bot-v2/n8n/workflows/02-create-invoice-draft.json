@@ -8,7 +8,10 @@
       "name": "Execute Workflow Trigger",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1,
-      "position": [0, 0]
+      "position": [
+        0,
+        0
+      ]
     },
     {
       "parameters": {
@@ -18,43 +21,77 @@
       "name": "Business Validation",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [240, 0]
+      "position": [
+        240,
+        0
+      ]
     },
     {
       "parameters": {
-        "jsCode": "// Paste n8n/code/calculate-invoice.js here in n8n UI or keep synchronized through import tooling.\nreturn $input.all();"
+        "jsCode": "const items = $json.items || [];\nconst discount = Number($json.discount || 0);\nconst additionalFee = Number($json.additional_fee || 0);\n\nif (discount < 0 || additionalFee < 0) {\n  throw new Error('discount and additional_fee must be non-negative');\n}\n\nlet subtotal = 0;\nconst calculatedItems = items.map((item, index) => {\n  const quantity = Number(item.quantity);\n  const unitPrice = Number(item.unit_price);\n  if (!Number.isInteger(quantity) || quantity <= 0) {\n    throw new Error(`item ${index + 1} quantity must be a positive integer`);\n  }\n  if (!Number.isInteger(unitPrice) || unitPrice < 0) {\n    throw new Error(`item ${index + 1} unit_price must be a non-negative integer`);\n  }\n  const lineTotal = quantity * unitPrice;\n  subtotal += lineTotal;\n  return {\n    ...item,\n    sort_order: index + 1,\n    quantity,\n    unit_price: unitPrice,\n    line_total: lineTotal,\n  };\n});\n\nconst grandTotal = subtotal - discount + additionalFee;\nif (grandTotal < 0) {\n  throw new Error('grand_total must be non-negative');\n}\n\nreturn [\n  {\n    json: {\n      ...$json,\n      items: calculatedItems,\n      subtotal,\n      discount,\n      additional_fee: additionalFee,\n      grand_total: grandTotal,\n    },\n  },\n];\n"
       },
       "id": "calculate-invoice",
       "name": "Calculate Invoice",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [480, 0]
+      "position": [
+        480,
+        0
+      ]
     },
     {
       "parameters": {
-        "jsCode": "// Paste n8n/code/content-fingerprint.js here in n8n UI or keep synchronized through import tooling.\nreturn $input.all();"
+        "jsCode": "const crypto = require('crypto');\n\nfunction normalizeText(value) {\n  if (value === null || value === undefined) return null;\n  return String(value).normalize('NFKC').trim().toLowerCase().replace(/\\s+/g, ' ');\n}\n\nfunction canonicalInt(value) {\n  if (value === null || value === undefined || value === '') return 0;\n  const normalized = String(value).trim().toLowerCase().replace(/\\s+/g, '');\n  if (normalized.includes('juta')) {\n    const amount = normalized.replace('rp', '').replace('juta', '').replace(',', '.');\n    return Math.round(Number.parseFloat(amount) * 1000000);\n  }\n  return Number.parseInt(normalized.replace(/[^\\d-]/g, ''), 10);\n}\n\nconst canonical = {\n  customer: normalizeText($json.customer_name || $json.customer?.name),\n  payment_type: String($json.payment_type || $json.payment?.type || '').trim().toUpperCase(),\n  discount: canonicalInt($json.discount || 0),\n  additional_fee: canonicalInt($json.additional_fee || 0),\n  items: ($json.items || []).map((item) => ({\n    trip_date: item.trip_date || null,\n    vehicle_type: normalizeText(item.vehicle_type),\n    quantity: canonicalInt(item.quantity),\n    pickup: normalizeText(item.pickup),\n    destination: normalizeText(item.destination),\n    unit_price: canonicalInt(item.unit_price),\n  })).sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))),\n};\n\nconst payload = JSON.stringify(canonical);\nconst contentFingerprint = crypto.createHash('sha256').update(payload).digest('hex');\n\nreturn [{ json: { ...$json, canonical_business_data: canonical, content_fingerprint: contentFingerprint } }];\n"
       },
       "id": "content-fingerprint",
       "name": "Content Fingerprint",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [720, 0]
+      "position": [
+        720,
+        0
+      ]
     }
   ],
   "connections": {
     "Execute Workflow Trigger": {
-      "main": [[{ "node": "Business Validation", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Business Validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Business Validation": {
-      "main": [[{ "node": "Calculate Invoice", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Calculate Invoice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Calculate Invoice": {
-      "main": [[{ "node": "Content Fingerprint", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Content Fingerprint",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "settings": { "executionOrder": "v1" },
+  "settings": {
+    "executionOrder": "v1"
+  },
   "staticData": {
     "description": "Create draft flow. DB insert, duplicate check, conversation state, and Telegram preview nodes are added after credentials are configured."
   }
 }
-

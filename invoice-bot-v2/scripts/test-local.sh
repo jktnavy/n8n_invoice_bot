@@ -16,6 +16,8 @@ PYTHONPATH="$ROOT_DIR/services/invoice-core:$ROOT_DIR/services/llm-parser:$ROOT_
 
 python3 "$ROOT_DIR/scripts/validate-fixture.py"
 python3 "$ROOT_DIR/scripts/validate-schema-static.py"
+python3 "$ROOT_DIR/scripts/sync-n8n-code.py" --check
+python3 "$ROOT_DIR/scripts/validate-n8n-workflows.py"
 
 python3 -m compileall -q \
   "$ROOT_DIR/services/invoice-core" \

@@ -3,6 +3,18 @@
 Workflow exports live in `n8n/workflows`.
 Reusable Code node snippets live in `n8n/code`.
 
+Synchronize snippets into workflow exports:
+
+```bash
+./scripts/sync-n8n-code.py
+```
+
+Validate exports:
+
+```bash
+./scripts/validate-n8n-workflows.py
+```
+
 Planned workflows:
 
 ```text
