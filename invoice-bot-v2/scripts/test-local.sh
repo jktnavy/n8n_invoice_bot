@@ -8,6 +8,8 @@ cd "$ROOT_DIR"
 PYTHONPATH="$ROOT_DIR/services/invoice-core" \
   python3 -m unittest discover -s "$ROOT_DIR/services/invoice-core/tests" -v
 
+python3 "$ROOT_DIR/scripts/validate-fixture.py"
+
 python3 -m compileall -q \
   "$ROOT_DIR/services/invoice-core" \
   "$ROOT_DIR/services/llm-parser" \
@@ -27,4 +29,3 @@ if python3 -c 'import pytest, pydantic, fastapi, weasyprint, jinja2' >/dev/null 
 else
   echo "SKIP renderer pytest on host: dependencies are intentionally not installed on host."
 fi
-
