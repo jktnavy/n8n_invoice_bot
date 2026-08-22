@@ -23,3 +23,11 @@ Persistent data target:
 V2 must not be deployed into `/home/invoicebot/.hermes/`.
 
 Cutover happens only after local and live Telegram acceptance tests pass.
+
+Production environment template:
+
+```text
+deploy/native.env.example
+```
+
+Secrets must be filled only on the target server.

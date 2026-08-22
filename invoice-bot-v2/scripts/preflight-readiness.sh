@@ -39,8 +39,8 @@ check_port "${INVOICE_RENDERER_PORT:-8000}"
 check_port "${N8N_PORT:-5678}"
 
 ./scripts/validate-config-static.py
+./scripts/validate-deploy-static.py
 ./scripts/validate-schema-static.py
 ./scripts/validate-n8n-workflows.py
 
 printf 'PREFLIGHT_DONE\n'
-

@@ -19,6 +19,7 @@ PYTHONPATH="$ROOT_DIR/services/telegram-gateway" \
 
 python3 "$ROOT_DIR/scripts/validate-fixture.py"
 python3 "$ROOT_DIR/scripts/validate-config-static.py"
+python3 "$ROOT_DIR/scripts/validate-deploy-static.py"
 python3 "$ROOT_DIR/scripts/validate-schema-static.py"
 python3 "$ROOT_DIR/scripts/sync-n8n-code.py" --check
 python3 "$ROOT_DIR/scripts/validate-n8n-workflows.py"

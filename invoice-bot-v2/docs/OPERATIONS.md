@@ -18,6 +18,12 @@ Run local/VPS V2 preflight checks:
 
 This reports required command availability, planned port usage, static config validation, schema invariants, and n8n workflow export validity. It is read-only.
 
+Static deployment template validation:
+
+```bash
+./scripts/validate-deploy-static.py
+```
+
 ## Runtime Services
 
 Recommended native services:

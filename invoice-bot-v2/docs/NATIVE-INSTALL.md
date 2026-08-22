@@ -30,6 +30,8 @@ user: invoice_bot_v2
 
 Never use MySQL root for runtime.
 
+Use `deploy/native.env.example` as the production environment template and fill secrets only on the target server.
+
 ## Renderer
 
 ```bash
@@ -38,6 +40,12 @@ python3 -m venv /opt/invoice-bot-v2/venv
 ```
 
 Install `deploy/systemd/invoice-renderer.service` only after adjusting the environment file path and chosen port.
+
+Validate static deployment templates before installing units:
+
+```bash
+./scripts/validate-deploy-static.py
+```
 
 ## n8n
 

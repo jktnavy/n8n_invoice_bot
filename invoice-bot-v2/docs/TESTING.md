@@ -22,6 +22,7 @@ Static config validation is included in `test-local` and can be run directly:
 
 ```bash
 ./scripts/validate-config-static.py
+./scripts/validate-deploy-static.py
 ```
 
 Database bootstrap validation, when credentials are available:
