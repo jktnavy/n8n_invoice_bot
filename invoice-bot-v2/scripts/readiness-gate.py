@@ -47,6 +47,8 @@ SECRET_PATTERNS = [
     re.compile(r"\bsk-[A-Za-z0-9_-]{20,}\b"),
     re.compile(r"\b\d{6,}:[A-Za-z0-9_-]{20,}\b"),
     re.compile(r"(token|password|api[_-]?key|authorization)\s*[:=]\s*\S+", re.IGNORECASE),
+    re.compile(r"\b(mysql_)?pwd\s*[:=]\s*\S+", re.IGNORECASE),
+    re.compile(r"\bsecret\s*[:=]\s*\S+", re.IGNORECASE),
 ]
 
 

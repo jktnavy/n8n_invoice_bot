@@ -114,9 +114,36 @@ class ReadinessEvidenceTest(unittest.TestCase):
         self.assertEqual(result["status"], "invalid")
         self.assertIn("evidence file appears to contain a secret-like value", result["failures"])
 
+    def test_mysql_pwd_evidence_is_invalid(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            evidence = Path(tmpdir) / "readiness-evidence.json"
+            evidence.write_text(
+                json.dumps(
+                    {
+                        "schema_version": readiness_gate.EVIDENCE_SCHEMA_VERSION,
+                        "generated_at": "2026-08-22T00:00:00+07:00",
+                        "environment": "unit-test",
+                        "gates": {},
+                        "note": "MYSQL_PWD=should-not-be-here",
+                    }
+                )
+            )
+
+            result = readiness_gate.validate_runtime_evidence(evidence)
+
+        self.assertEqual(result["status"], "invalid")
+        self.assertIn("evidence file appears to contain a secret-like value", result["failures"])
+
     def test_recorder_rejects_command_that_does_not_match_gate(self):
         with self.assertRaises(SystemExit):
             record_evidence.validate_gate_command("llm_live_structured_output", "./scripts/test-telegram.sh")
+
+    def test_recorder_rejects_secret_like_command(self):
+        with self.assertRaises(SystemExit):
+            record_evidence.assert_no_secret_like_value(
+                "MYSQL_PWD=should-not-be-here ./scripts/validate-db.sh",
+                "command",
+            )
 
     def test_recorder_rejects_existing_evidence_file_with_secret_like_value(self):
         with tempfile.TemporaryDirectory() as tmpdir:
